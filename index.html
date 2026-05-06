@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>USP Monograph Test Extractor</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         margin: 24px; max-width: 1100px; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: #555; margin: 0 0 20px; font-size: 14px; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+              padding: 14px; background: #f7f7f9; border: 1px solid #e3e3e8;
+              border-radius: 8px; margin-bottom: 16px; }
+  button { padding: 8px 14px; cursor: pointer; border: 1px solid #888;
+           background: #fff; border-radius: 6px; font-size: 14px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  textarea { width: 100%; min-height: 140px; font-family: ui-monospace, Menlo, monospace;
+             font-size: 12px; padding: 8px; box-sizing: border-box; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+  th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef0f4; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  .tag { display: inline-block; padding: 2px 8px; background: #dde6ff;
+         border-radius: 12px; font-size: 11px; white-space: nowrap; }
+  .muted { color: #777; font-size: 13px; }
+  .error { color: #b00; }
+  details { margin-bottom: 12px; }
+  details summary { cursor: pointer; padding: 6px 0; }
+  .count { font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>USP Monograph Test Extractor</h1>
+<p class="lede">Abre este archivo directamente en el navegador (doble clic). Sube una monografía USP en PDF / TXT / HTML, o pega el texto, y se extraerán todos los tests con sus criterios de aceptación.</p>
+
+<div class="controls">
+  <input type="file" id="file" accept=".pdf,.txt,.html,.htm">
+  <button id="extractBtn">Extraer tests</button>
+  <button id="downloadBtn" disabled>Descargar CSV</button>
+  <span id="status" class="muted"></span>
+</div>
+
+<details>
+  <summary>O pega el texto de la monografía aquí</summary>
+  <textarea id="textInput" placeholder="Pega aquí el texto plano de la monografía USP..."></textarea>
+</details>
+
+<div id="output"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if (window['pdfjsLib']) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const $ = (id) => document.getElementById(id);
+
+// ---------- File reading ----------
+
+async function readFile(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) return await readPdf(file);
+  if (name.endsWith('.html') || name.endsWith('.htm')) {
+    const html = await file.text();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.innerText || div.textContent || '';
+  }
+  return await file.text();
+}
+
+async function readPdf(file) {
+  if (!window['pdfjsLib']) {
+    throw new Error('PDF.js no cargó. Conéctate a Internet o usa un archivo TXT/HTML.');
+  }
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let out = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    // Group items by Y to reconstruct lines
+    const linesByY = new Map();
+    for (const it of tc.items) {
+      const x = it.transform[4];
+      const y = Math.round(it.transform[5]);
+      if (!linesByY.has(y)) linesByY.set(y, []);
+      linesByY.get(y).push({ str: it.str, x });
+    }
+    const ys = [...linesByY.keys()].sort((a, b) => b - a); // top -> bottom
+    for (const y of ys) {
+      const arr = linesByY.get(y).sort((a, b) => a.x - b.x);
+      let line = '';
+      let prevEnd = null;
+      for (const it of arr) {
+        if (prevEnd !== null && it.x - prevEnd > 4 && !line.endsWith(' ')) line += ' ';
+        line += it.str;
+        prevEnd = it.x + it.str.length * 4;
+      }
+      out += line + '\n';
+    }
+    out += '\n';
+  }
+  return out;
+}
+
+// ---------- Parsing ----------
+
+const SECTION_HEADERS = [
+  'DEFINITION','IDENTIFICATION','ASSAY','IMPURITIES',
+  'ORGANIC IMPURITIES','INORGANIC IMPURITIES','RESIDUAL SOLVENTS',
+  'LIMIT OF','OTHER COMPONENTS','SPECIFIC TESTS','SPECIFIC TEST',
+  'PERFORMANCE TESTS','ADDITIONAL REQUIREMENTS','USP REFERENCE STANDARDS',
+  'PACKAGING AND STORAGE','LABELING','COMPOSITION','CONTAMINANTS',
+  'MICROBIAL ENUMERATION TESTS','MICROBIOLOGICAL ATTRIBUTES'
+];
+
+// "Acceptance criteria:" on its own line (possibly indented)
+const ACCEPT_RE = /^\s*acceptance\s+criteria\s*:\s*(.*)$/i;
+
+// IDENTIFICATION subtest opener: optional bullets/diamonds, single uppercase letter, period.
+// Examples handled: "• A.", "•◆A.", "◆A.", "A.", " B."
+const ID_SUB_RE = /^\s*[•◆◊♦▪‣·*\-◆❖]*\s*([A-Z])\.\s*(.*)$/;
+
+// SPECIFIC TESTS bullet line: starts with a bullet glyph
+const BULLET_RE = /^\s*[•◆◊♦▪‣·•◆]\s*(.+?)\s*$/;
+
+// A "field marker": e.g. "Sample solution:", "Analysis:", "Standard solution:"
+// — used to know when a name / criteria continuation has ended.
+const FIELD_RE = /^\s*[A-Z][A-Za-z]*(\s+[A-Za-z]+){0,4}\s*:/;
+
+function cleanText(raw) {
+  let t = raw.replace(/\r\n?/g, '\n');
+  // Normalize bullet-like glyphs to canonical • / ◆
+  t = t.replace(/[•●◦∙·‧]/g, '•');
+  t = t.replace(/[◆♦❖⧫]/g, '◆');
+  // Collapse runs of horizontal whitespace
+  t = t.split('\n').map(l => l.replace(/[ \t]+/g, ' ')).join('\n');
+  return t;
+}
+
+function isSectionHeader(line) {
+  const t = line.trim();
+  if (!t || t.length > 70) return null;
+  // Header lines tend to be uppercase. Reject lines with too many lowercase letters.
+  const lowers = (t.match(/[a-z]/g) || []).length;
+  const uppers = (t.match(/[A-Z]/g) || []).length;
+  if (uppers < 3) return null;
+  if (lowers > uppers / 3) return null;
+  for (const h of SECTION_HEADERS) {
+    if (t === h || t.startsWith(h + ' ') || t.startsWith(h + ',') || t.startsWith(h + ':')) {
+      return { canonical: h, full: t };
+    }
+  }
+  return null;
+}
+
+function splitSections(text) {
+  const lines = text.split('\n');
+  const sections = [];
+  let current = { name: 'PREAMBLE', header: 'PREAMBLE', lines: [] };
+  for (const line of lines) {
+    const h = isSectionHeader(line);
+    if (h) {
+      sections.push(current);
+      current = { name: h.canonical, header: h.full, lines: [] };
+    } else {
+      current.lines.push(line);
+    }
+  }
+  sections.push(current);
+  return sections;
+}
+
+function captureCriteria(blockLines) {
+  for (let i = 0; i < blockLines.length; i++) {
+    const m = blockLines[i].match(ACCEPT_RE);
+    if (m) {
+      let crit = m[1].trim();
+      // Continue gathering wrapped lines until empty line or next field marker
+      for (let j = i + 1; j < blockLines.length; j++) {
+        const next = blockLines[j];
+        const trimmed = next.trim();
+        if (!trimmed) break;
+        if (FIELD_RE.test(trimmed)) break;
+        if (BULLET_RE.test(trimmed)) break;
+        if (ID_SUB_RE.test(trimmed)) break;
+        crit += ' ' + trimmed;
+      }
+      return crit.replace(/\s+/g, ' ').trim();
+    }
+  }
+  return null;
+}
+
+function parseIdentification(sectionLines) {
+  const tests = [];
+  let i = 0;
+  while (i < sectionLines.length) {
+    const m = sectionLines[i].match(ID_SUB_RE);
+    if (!m) { i++; continue; }
+
+    const letter = m[1];
+    let nameLine = m[2].trim();
+
+    // Gather block until next ID subtest
+    let j = i + 1;
+    const block = [];
+    while (j < sectionLines.length && !sectionLines[j].match(ID_SUB_RE)) {
+      block.push(sectionLines[j]);
+      j++;
+    }
+
+    // If the test name was empty on the opener line, look for a non-field, non-empty line
+    if (!nameLine) {
+      for (const b of block) {
+        const t = b.trim();
+        if (!t) continue;
+        if (FIELD_RE.test(t)) break;
+        nameLine = t;
+        break;
+      }
+    }
+
+    let testName = letter + '.';
+    if (nameLine) testName += ' ' + nameLine.replace(/\s+/g, ' ').trim();
+
+    let crit = captureCriteria(block);
+
+    if (!crit) {
+      // Fallback: inline reference like "...: 197A"
+      const colon = nameLine.lastIndexOf(':');
+      if (colon > -1) {
+        const tail = nameLine.slice(colon + 1).trim();
+        if (tail && tail.length < 120) {
+          crit = '(General chapter reference) ' + tail;
+          // Also strip the tail from the displayed name
+          testName = letter + '. ' + nameLine.slice(0, colon).trim();
+        }
+      }
+    }
+
+    tests.push({
+      section: 'IDENTIFICATION',
+      name: testName.trim(),
+      criteria: crit || '(No declarado explícitamente — ver capítulo general citado)'
+    });
+    i = j;
+  }
+  return tests;
+}
+
+function parseBulletedTests(sectionLines, sectionLabel) {
+  const tests = [];
+  let i = 0;
+  while (i < sectionLines.length) {
+    const m = sectionLines[i].match(BULLET_RE);
+    if (!m) { i++; continue; }
+
+    let nameRaw = m[1].trim();
+    // Skip false positives like "• [Note ...]"
+    if (/^\[\s*note/i.test(nameRaw)) { i++; continue; }
+
+    // Gather block until next bullet line (or section end)
+    let j = i + 1;
+    const block = [];
+    while (j < sectionLines.length && !sectionLines[j].match(BULLET_RE)) {
+      block.push(sectionLines[j]);
+      j++;
+    }
+
+    // Test name may continue onto next line if not a field marker.
+    // E.g. "• Loss on drying" then "(731):" on next line.
+    if (block.length && !FIELD_RE.test(block[0].trim()) && block[0].trim()) {
+      const cont = block[0].trim();
+      if (!ACCEPT_RE.test(cont) && cont.length < 80) {
+        nameRaw += ' ' + cont;
+        block.shift();
+      }
+    }
+
+    const crit = captureCriteria(block);
+    const testName = nameRaw.replace(/\s+/g, ' ').trim();
+
+    tests.push({
+      section: sectionLabel,
+      name: testName,
+      criteria: crit || '(No declarado)'
+    });
+    i = j;
+  }
+  return tests;
+}
+
+function parseSingleTestSection(sectionLines, sectionLabel, defaultName) {
+  const crit = captureCriteria(sectionLines);
+  if (!crit) return [];
+  return [{ section: sectionLabel, name: defaultName, criteria: crit }];
+}
+
+function extractTests(rawText) {
+  const text = cleanText(rawText);
+  const sections = splitSections(text);
+  const all = [];
+
+  for (const sec of sections) {
+    switch (sec.name) {
+      case 'IDENTIFICATION':
+        all.push(...parseIdentification(sec.lines));
+        break;
+      case 'SPECIFIC TESTS':
+      case 'SPECIFIC TEST':
+      case 'IMPURITIES':
+      case 'ORGANIC IMPURITIES':
+      case 'INORGANIC IMPURITIES':
+      case 'RESIDUAL SOLVENTS':
+      case 'OTHER COMPONENTS':
+      case 'CONTAMINANTS':
+      case 'PERFORMANCE TESTS':
+      case 'ADDITIONAL REQUIREMENTS':
+      case 'MICROBIAL ENUMERATION TESTS':
+      case 'MICROBIOLOGICAL ATTRIBUTES':
+        all.push(...parseBulletedTests(sec.lines, sec.name));
+        break;
+      case 'ASSAY':
+        all.push(...parseSingleTestSection(sec.lines, 'ASSAY', 'Assay'));
+        break;
+      case 'LIMIT OF':
+        all.push(...parseSingleTestSection(sec.lines, sec.header, sec.header));
+        break;
+      default:
+        break;
+    }
+  }
+  return all;
+}
+
+// ---------- Rendering ----------
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function renderTable(tests) {
+  if (!tests.length) {
+    $('output').innerHTML =
+      '<p class="error">No se encontraron tests. Verifica que el archivo sea una monografía USP, o pega el texto directamente.</p>';
+    return;
+  }
+  let html = `<p><span class="count">${tests.length}</span> test(s) encontrados.</p>
+    <table><thead><tr>
+      <th style="width:18%">Sección</th>
+      <th style="width:32%">Test</th>
+      <th>Criterio de aceptación</th>
+    </tr></thead><tbody>`;
+  for (const t of tests) {
+    html += `<tr>
+      <td><span class="tag">${escapeHtml(t.section)}</span></td>
+      <td>${escapeHtml(t.name)}</td>
+      <td>${escapeHtml(t.criteria)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  $('output').innerHTML = html;
+}
+
+function toCsv(tests) {
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [['Sección','Test','Criterio de aceptación'].map(esc).join(',')];
+  for (const t of tests) lines.push([t.section, t.name, t.criteria].map(esc).join(','));
+  return lines.join('\n');
+}
+
+// ---------- UI wiring ----------
+
+let lastTests = [];
+
+$('extractBtn').addEventListener('click', async () => {
+  $('output').innerHTML = '';
+  $('status').textContent = '';
+  try {
+    let text = '';
+    const file = $('file').files[0];
+    const pasted = $('textInput').value.trim();
+    if (file) {
+      $('status').textContent = 'Leyendo archivo...';
+      text = await readFile(file);
+    } else if (pasted) {
+      text = pasted;
+    } else {
+      $('status').textContent = 'Selecciona un archivo o pega el texto.';
+      return;
+    }
+    $('status').textContent = 'Analizando...';
+    lastTests = extractTests(text);
+    renderTable(lastTests);
+    $('downloadBtn').disabled = lastTests.length === 0;
+    $('status').textContent = `Listo. ${lastTests.length} test(s) extraídos.`;
+  } catch (e) {
+    console.error(e);
+    $('output').innerHTML = `<p class="error">Error: ${escapeHtml(e.message)}</p>`;
+    $('status').textContent = '';
+  }
+});
+
+$('downloadBtn').addEventListener('click', () => {
+  const blob = new Blob([toCsv(lastTests)], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'usp-tests.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
