@@ -300,10 +300,52 @@ function parseSingleTestSection(sectionLines, sectionLabel, defaultName) {
   return [{ section: sectionLabel, name: defaultName, criteria: crit }];
 }
 
+function extractMonographName(preambleLines) {
+  // Title is usually the LAST short, non-noise line before DEFINITION
+  // (running headers like "Gelatin / Official Monographs" appear earlier).
+  const candidates = [];
+  for (const raw of preambleLines) {
+    const t = raw.trim();
+    if (!t) continue;
+    if (/^\d+$/.test(t)) continue;                            // page number
+    if (/official\s+monographs?/i.test(t)) continue;          // running header
+    if (/^usp\b/i.test(t) && t.length < 30) continue;         // "USP 43"
+    if (/^page\s+\d+/i.test(t)) continue;
+    if (/change\s+to\s+read/i.test(t)) continue;
+    if (t.length > 120) continue;
+    if (/[•◆]/.test(t)) continue;                             // bulleted content
+    candidates.push(t.replace(/\s+/g, ' '));
+  }
+  if (!candidates.length) return '(no detectado)';
+  // Prefer the last candidate (closest to DEFINITION). Strip trailing CAS/ID strings.
+  return candidates[candidates.length - 1];
+}
+
+function extractDefinition(definitionLines) {
+  const text = definitionLines
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text || '(sección Definition vacía o no detectada)';
+}
+
 function extractTests(rawText) {
   const text = cleanText(rawText);
   const sections = splitSections(text);
   const all = [];
+
+  // Header rows: monograph name + Definition
+  const preamble = sections.find(s => s.name === 'PREAMBLE');
+  const definition = sections.find(s => s.name === 'DEFINITION');
+  const monographName = preamble ? extractMonographName(preamble.lines) : '(no detectado)';
+  all.push({ section: 'MONOGRAFÍA', name: 'Nombre', criteria: monographName });
+  all.push({
+    section: 'MONOGRAFÍA',
+    name: 'Definición',
+    criteria: definition ? extractDefinition(definition.lines) : '(sección Definition no encontrada)'
+  });
 
   for (const sec of sections) {
     switch (sec.name) {
