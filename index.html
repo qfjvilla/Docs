@@ -37,7 +37,8 @@
 <div class="controls">
   <input type="file" id="file" accept=".pdf,.txt,.html,.htm">
   <button id="extractBtn">Extraer tests</button>
-  <button id="downloadBtn" disabled>Descargar CSV</button>
+  <button id="downloadWordBtn" disabled>Descargar Word</button>
+  <button id="downloadExcelBtn" disabled>Descargar Excel</button>
   <span id="status" class="muted"></span>
 </div>
 
@@ -409,11 +410,58 @@ function renderTable(tests) {
   $('output').innerHTML = html;
 }
 
-function toCsv(tests) {
-  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const lines = [['Sección','Test','Criterio de aceptación'].map(esc).join(',')];
-  for (const t of tests) lines.push([t.section, t.name, t.criteria].map(esc).join(','));
-  return lines.join('\n');
+function buildTableRowsHtml(tests) {
+  return tests.map(t =>
+    `<tr><td>${escapeHtml(t.section)}</td><td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.criteria)}</td></tr>`
+  ).join('');
+}
+
+function toExcelHtml(tests) {
+  // Excel opens HTML tables natively when saved with .xls extension.
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:x="urn:schemas-microsoft-com:office:excel"
+                xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>USP Tests</x:Name><x:WorksheetOptions><x:DisplayGridlines/>
+</x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>th,td{border:1px solid #999;padding:4px;vertical-align:top;}
+th{background:#dde6ff;}</style></head>
+<body><table>
+<thead><tr><th>Sección</th><th>Test</th><th>Criterio de aceptación</th></tr></thead>
+<tbody>${buildTableRowsHtml(tests)}</tbody></table></body></html>`;
+}
+
+function toWordHtml(tests) {
+  // Word opens HTML saved with .doc extension as a Word document.
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:w="urn:schemas-microsoft-com:office:word"
+                xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8">
+<title>USP Monograph Tests</title>
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}
+h1{font-size:16pt;}
+table{border-collapse:collapse;width:100%;}
+th,td{border:1px solid #555;padding:6px;vertical-align:top;}
+th{background:#dde6ff;}</style></head>
+<body>
+<h1>USP Monograph — Tests y criterios de aceptación</h1>
+<table>
+<thead><tr><th>Sección</th><th>Test</th><th>Criterio de aceptación</th></tr></thead>
+<tbody>${buildTableRowsHtml(tests)}</tbody></table>
+</body></html>`;
+}
+
+function downloadBlob(filename, content, mime) {
+  const blob = new Blob(['﻿', content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ---------- UI wiring ----------
@@ -439,7 +487,9 @@ $('extractBtn').addEventListener('click', async () => {
     $('status').textContent = 'Analizando...';
     lastTests = extractTests(text);
     renderTable(lastTests);
-    $('downloadBtn').disabled = lastTests.length === 0;
+    const noResults = lastTests.length === 0;
+    $('downloadWordBtn').disabled = noResults;
+    $('downloadExcelBtn').disabled = noResults;
     $('status').textContent = `Listo. ${lastTests.length} test(s) extraídos.`;
   } catch (e) {
     console.error(e);
@@ -448,16 +498,12 @@ $('extractBtn').addEventListener('click', async () => {
   }
 });
 
-$('downloadBtn').addEventListener('click', () => {
-  const blob = new Blob([toCsv(lastTests)], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'usp-tests.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+$('downloadWordBtn').addEventListener('click', () => {
+  downloadBlob('usp-tests.doc', toWordHtml(lastTests), 'application/msword');
+});
+
+$('downloadExcelBtn').addEventListener('click', () => {
+  downloadBlob('usp-tests.xls', toExcelHtml(lastTests), 'application/vnd.ms-excel');
 });
 </script>
 </body>
