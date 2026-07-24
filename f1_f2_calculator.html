@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculador f1 / f2 - Perfiles de Disolución</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #d7dde5;
+    --border-strong: #b6bfcc;
+    --text: #1e2733;
+    --muted: #5b6673;
+    --primary: #0b5cad;
+    --primary-hover: #084a8c;
+    --accent: #0e8a5f;
+    --danger: #b8360a;
+    --warn: #a06400;
+    --ok: #0e8a5f;
+    --ref: #0b5cad;
+    --test: #b8360a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  header {
+    background: linear-gradient(135deg, #0b5cad, #084a8c);
+    color: #fff;
+    padding: 22px 28px;
+  }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0; opacity: 0.9; font-size: 13px; }
+  main { padding: 22px 28px 60px; max-width: 1300px; margin: 0 auto; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 16px;
+    color: var(--primary);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 900px) { .product-grid { grid-template-columns: 1fr; } }
+  .product-block { border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .product-block.ref { background: #f2f7fd; }
+  .product-block.test { background: #fdf5f0; }
+  .product-block h3 { margin: 0 0 10px; font-size: 14px; }
+  .product-block.ref h3 { color: var(--ref); }
+  .product-block.test h3 { color: var(--test); }
+  label { display: block; font-size: 12px; color: var(--muted); margin-top: 8px; margin-bottom: 3px; }
+  input[type="text"], input[type="date"], input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    font-size: 13px;
+    background: #fff;
+    color: var(--text);
+  }
+  input[type="number"] { text-align: right; }
+  input:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .controls-row {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .controls-row .field { flex: 0 0 auto; }
+  .controls-row .field input { width: 90px; }
+  button {
+    padding: 8px 14px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  button:hover { background: var(--primary-hover); }
+  button.secondary { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+  button.secondary:hover { background: #eef4fb; }
+  button.danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+  .tables-wrap { overflow-x: auto; }
+  table.data {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    min-width: 640px;
+  }
+  table.data th, table.data td {
+    border: 1px solid var(--border-strong);
+    padding: 3px 4px;
+    text-align: center;
+  }
+  table.data th { background: #eef2f7; font-weight: 600; }
+  table.data td.rowlabel { background: #f7f9fc; font-weight: 600; width: 55px; }
+  table.data input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 12px;
+    padding: 3px 2px;
+  }
+  table.data input:focus { background: #fffbe6; outline: 1px solid var(--primary); }
+  table.data tfoot td { background: #f0f4f9; font-weight: 600; font-size: 11px; }
+  table.data tfoot td.warn { color: var(--warn); }
+  table.data tfoot td.bad { color: var(--danger); }
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .results-grid { grid-template-columns: 1fr; } }
+  .metric-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    background: #fafbfd;
+  }
+  .metric-box h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 34px; font-weight: 700; color: var(--primary); }
+  .metric-value.ok { color: var(--ok); }
+  .metric-value.bad { color: var(--danger); }
+  .metric-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .checks { list-style: none; padding: 0; margin: 10px 0 0; font-size: 12.5px; }
+  .checks li { padding: 5px 0; border-bottom: 1px dashed var(--border); display: flex; gap: 8px; align-items: flex-start; }
+  .checks li:last-child { border-bottom: none; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .badge.ok { background: #d6f0e2; color: #0e6a48; }
+  .badge.bad { background: #fadfd2; color: #9c2f08; }
+  .badge.warn { background: #fbeecb; color: #8a5602; }
+  .chart-wrap { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  canvas { display: block; max-width: 100%; height: auto; }
+  .note { background: #f3f7fb; border-left: 4px solid var(--primary); padding: 10px 12px; font-size: 12.5px; color: #33475b; border-radius: 4px; margin-top: 10px; }
+  .footer { text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 24px; }
+  details { margin-top: 10px; font-size: 12.5px; }
+  summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+  .kv { font-size: 12.5px; margin: 2px 0; }
+  .kv b { color: var(--muted); font-weight: 500; }
+  @media print {
+    body { background: #fff; }
+    header { background: #fff !important; color: #000 !important; border-bottom: 2px solid #000; }
+    button, .no-print { display: none !important; }
+    .card { break-inside: avoid; border-color: #999; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Calculador f<sub>1</sub> / f<sub>2</sub> — Perfiles de Disolución</h1>
+  <p>Comparación de perfiles según guías FDA / EMA / ICH Q1E. Aplicación 100 % local — no requiere instalación ni conexión a internet.</p>
+</header>
+
+<main>
+
+<section class="card">
+  <h2>1. Identificación de los productos</h2>
+  <div class="product-grid">
+    <div class="product-block ref">
+      <h3>Producto de Referencia (R)</h3>
+      <label>Nombre del producto</label>
+      <input type="text" id="ref_name" placeholder="p. ej. Producto R 500 mg tabletas">
+      <div class="row2">
+        <div>
+          <label>Número de lote</label>
+          <input type="text" id="ref_lot" placeholder="Lote">
+        </div>
+        <div>
+          <label>Fecha de fabricación</label>
+          <input type="date" id="ref_date">
+        </div>
+      </div>
+      <label>Fabricante</label>
+      <input type="text" id="ref_manuf" placeholder="Nombre del fabricante">
+    </div>
+
+    <div class="product-block test">
+      <h3>Producto de Prueba (T)</h3>
+      <label>Nombre del producto</label>
+      <input type="text" id="test_name" placeholder="p. ej. Producto T 500 mg tabletas">
+      <div class="row2">
+        <div>
+          <label>Número de lote</label>
+          <input type="text" id="test_lot" placeholder="Lote">
+        </div>
+        <div>
+          <label>Fecha de fabricación</label>
+          <input type="date" id="test_date">
+        </div>
+      </div>
+      <label>Fabricante</label>
+      <input type="text" id="test_manuf" placeholder="Nombre del fabricante">
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Configuración del ensayo</h2>
+  <div class="controls-row">
+    <div class="field">
+      <label>Nº de vasos (unidades)</label>
+      <input type="number" id="cfg_vessels" value="12" min="6" max="24" step="1">
+    </div>
+    <div class="field">
+      <label>Nº de tiempos de muestreo</label>
+      <input type="number" id="cfg_times" value="5" min="3" max="12" step="1">
+    </div>
+    <div class="field">
+      <label>Q (% liberación referencia)</label>
+      <input type="number" id="cfg_Q" value="85" min="50" max="100" step="1">
+    </div>
+    <div class="field" style="flex:1; min-width: 200px;">
+      <button class="secondary" onclick="rebuildTables()">Reconstruir tablas</button>
+      <button class="secondary" onclick="loadExample()">Cargar datos ejemplo</button>
+      <button class="danger" onclick="clearAllData()">Limpiar datos</button>
+    </div>
+  </div>
+  <div class="note">
+    Ingrese en cada tabla los porcentajes disueltos (%) por vaso y tiempo. Los tiempos de muestreo (minutos) se ingresan en la cabecera.
+    Los cálculos son <b>dinámicos</b>: cambian automáticamente al modificar cualquier dato, incluido <b>n</b> (número de puntos usados para f<sub>2</sub>).
+  </div>
+</section>
+
+<section class="card">
+  <h2>3. Datos de disolución — Referencia (R)</h2>
+  <div class="tables-wrap"><table class="data" id="table_ref"></table></div>
+</section>
+
+<section class="card">
+  <h2>4. Datos de disolución — Prueba (T)</h2>
+  <div class="tables-wrap"><table class="data" id="table_test"></table></div>
+</section>
+
+<section class="card">
+  <h2>5. Verificación de restricciones (FDA / EMA / ICH Q1E)</h2>
+  <ul class="checks" id="checks"></ul>
+</section>
+
+<section class="card">
+  <h2>6. Resultados f<sub>1</sub> y f<sub>2</sub></h2>
+  <div class="controls-row">
+    <div class="field">
+      <label>n — puntos usados para el cálculo</label>
+      <input type="number" id="cfg_n" value="0" min="1" step="1">
+      <div class="metric-sub" id="n_hint">n se ajusta al número de puntos aceptables según guías</div>
+    </div>
+    <div class="field">
+      <button class="secondary" onclick="autoSelectN()">Auto-seleccionar n (según guías)</button>
+    </div>
+  </div>
+
+  <div class="results-grid" style="margin-top: 10px;">
+    <div class="metric-box">
+      <h4>Factor de diferencia f<sub>1</sub></h4>
+      <div class="metric-value" id="f1_value">—</div>
+      <div class="metric-sub" id="f1_status">Criterio: 0 ≤ f<sub>1</sub> ≤ 15</div>
+    </div>
+    <div class="metric-box">
+      <h4>Factor de similitud f<sub>2</sub></h4>
+      <div class="metric-value" id="f2_value">—</div>
+      <div class="metric-sub" id="f2_status">Criterio: 50 ≤ f<sub>2</sub> ≤ 100 → perfiles similares</div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Ver detalle del cálculo</summary>
+    <div id="calc_detail" style="margin-top: 8px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; white-space: pre-wrap;"></div>
+  </details>
+</section>
+
+<section class="card">
+  <h2>7. Gráfica de perfiles</h2>
+  <div class="chart-wrap">
+    <canvas id="chart" width="1000" height="480"></canvas>
+  </div>
+</section>
+
+<section class="card no-print">
+  <h2>8. Exportar / Imprimir</h2>
+  <button onclick="window.print()">Imprimir / Guardar como PDF</button>
+  <button class="secondary" onclick="exportCSV()">Exportar datos a CSV</button>
+</section>
+
+<p class="footer">
+  Software de código abierto para uso académico y profesional. Fórmulas conforme a
+  FDA Guidance for Industry (Dissolution Testing of Immediate Release Solid Oral Dosage Forms, 1997)
+  y EMA Guideline on the Investigation of Bioequivalence (CPMP/EWP/QWP/1401/98 Rev.1).
+</p>
+
+</main>
+
+<script>
+"use strict";
+
+const state = {
+  vessels: 12,
+  times: 5,
+  Q: 85,
+  n: 0,           // 0 = auto
+  timePoints: [15, 30, 45, 60, 90],
+  ref: [],        // ref[time][vessel]
+  test: []
+};
+
+function $(id){ return document.getElementById(id); }
+
+function initTimeDefaults(nTimes){
+  const defaults = [15, 30, 45, 60, 90, 120, 180, 240, 360, 480, 720, 1440];
+  const t = [];
+  for (let i = 0; i < nTimes; i++) t.push(defaults[i] ?? (defaults[defaults.length-1] + (i - defaults.length + 1) * 60));
+  return t;
+}
+
+function initMatrix(times, vessels){
+  const m = [];
+  for (let t = 0; t < times; t++){
+    m.push(new Array(vessels).fill(null));
+  }
+  return m;
+}
+
+function rebuildTables(){
+  const v = Math.max(3, parseInt($("cfg_vessels").value) || 12);
+  const t = Math.max(2, parseInt($("cfg_times").value) || 5);
+  state.Q = parseFloat($("cfg_Q").value) || 85;
+
+  // preserve existing data where possible
+  const oldRef = state.ref, oldTest = state.test;
+  const oldTimes = state.timePoints;
+
+  state.vessels = v;
+  state.times = t;
+  state.timePoints = initTimeDefaults(t).map((val, i) => (oldTimes && oldTimes[i] != null) ? oldTimes[i] : val);
+  state.ref = initMatrix(t, v);
+  state.test = initMatrix(t, v);
+
+  for (let i = 0; i < t; i++){
+    for (let j = 0; j < v; j++){
+      if (oldRef[i] && oldRef[i][j] != null) state.ref[i][j] = oldRef[i][j];
+      if (oldTest[i] && oldTest[i][j] != null) state.test[i][j] = oldTest[i][j];
+    }
+  }
+
+  renderTable("table_ref", "ref");
+  renderTable("table_test", "test");
+  recalcAll();
+}
+
+function renderTable(tableId, which){
+  const table = $(tableId);
+  const v = state.vessels;
+  const t = state.times;
+  const data = state[which];
+
+  let html = "<thead><tr><th>Vaso</th>";
+  for (let i = 0; i < t; i++){
+    html += `<th>t<sub>${i+1}</sub> (min)<br><input type="number" min="0" step="0.1" value="${state.timePoints[i]}" data-time-idx="${i}" style="width:60px; border:1px solid #b6bfcc; border-radius:3px; background:#fff;"></th>`;
+  }
+  html += "</tr></thead><tbody>";
+
+  for (let j = 0; j < v; j++){
+    html += `<tr><td class="rowlabel">${j+1}</td>`;
+    for (let i = 0; i < t; i++){
+      const val = data[i][j];
+      html += `<td><input type="number" step="0.01" min="0" max="150" value="${val == null ? "" : val}" data-t="${i}" data-v="${j}" data-which="${which}"></td>`;
+    }
+    html += "</tr>";
+  }
+  html += "</tbody>";
+
+  html += `<tfoot>
+    <tr><td class="rowlabel">Media</td>${Array.from({length:t}, (_,i)=>`<td id="${which}_mean_${i}">—</td>`).join("")}</tr>
+    <tr><td class="rowlabel">DE</td>${Array.from({length:t}, (_,i)=>`<td id="${which}_sd_${i}">—</td>`).join("")}</tr>
+    <tr><td class="rowlabel">CV (%)</td>${Array.from({length:t}, (_,i)=>`<td id="${which}_cv_${i}">—</td>`).join("")}</tr>
+  </tfoot>`;
+  table.innerHTML = html;
+
+  // Event bindings
+  table.querySelectorAll("input[data-t]").forEach(inp => {
+    inp.addEventListener("input", e => {
+      const t = +e.target.dataset.t;
+      const v = +e.target.dataset.v;
+      const w = e.target.dataset.which;
+      const val = e.target.value === "" ? null : parseFloat(e.target.value);
+      state[w][t][v] = (val == null || isNaN(val)) ? null : val;
+      recalcAll();
+    });
+  });
+  table.querySelectorAll("input[data-time-idx]").forEach(inp => {
+    inp.addEventListener("input", e => {
+      const i = +e.target.dataset.timeIdx;
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) {
+        state.timePoints[i] = val;
+        // sync both tables headers
+        document.querySelectorAll(`input[data-time-idx="${i}"]`).forEach(x => { if (x !== e.target) x.value = val; });
+        recalcAll();
+      }
+    });
+  });
+}
+
+function stats(arr){
+  const vals = arr.filter(x => x != null && !isNaN(x));
+  const n = vals.length;
+  if (n === 0) return { n:0, mean: null, sd: null, cv: null };
+  const mean = vals.reduce((a,b)=>a+b, 0) / n;
+  let sd = null, cv = null;
+  if (n > 1) {
+    const varSum = vals.reduce((a,b)=>a + (b-mean)*(b-mean), 0) / (n-1);
+    sd = Math.sqrt(varSum);
+    cv = mean !== 0 ? (sd / mean) * 100 : 0;
+  }
+  return { n, mean, sd, cv };
+}
+
+function fmt(x, d=2){
+  if (x == null || isNaN(x)) return "—";
+  return x.toFixed(d);
+}
+
+function computeStats(which){
+  const out = [];
+  for (let i = 0; i < state.times; i++){
+    const s = stats(state[which][i]);
+    out.push(s);
+    const meanEl = $(`${which}_mean_${i}`);
+    const sdEl = $(`${which}_sd_${i}`);
+    const cvEl = $(`${which}_cv_${i}`);
+    if (meanEl) meanEl.textContent = fmt(s.mean, 2);
+    if (sdEl) sdEl.textContent = fmt(s.sd, 2);
+    if (cvEl) {
+      cvEl.textContent = fmt(s.cv, 2);
+      cvEl.className = "";
+      const isEarly = i === 0;
+      if (s.cv != null) {
+        if (isEarly && s.cv > 20) cvEl.classList.add("bad");
+        else if (!isEarly && s.cv > 10) cvEl.classList.add("bad");
+        else if (s.cv > (isEarly ? 15 : 8)) cvEl.classList.add("warn");
+      }
+    }
+  }
+  return out;
+}
+
+function firstIndexAtOrAbove(means, threshold){
+  for (let i = 0; i < means.length; i++){
+    if (means[i] != null && means[i] >= threshold) return i;
+  }
+  return -1;
+}
+
+function computeF1F2(nUsed, refMeans, testMeans){
+  const pairs = [];
+  for (let i = 0; i < Math.min(refMeans.length, testMeans.length); i++){
+    if (refMeans[i] != null && testMeans[i] != null) pairs.push({i, R: refMeans[i], T: testMeans[i]});
+  }
+  const use = pairs.slice(0, nUsed);
+  if (use.length < 3) return { f1:null, f2:null, n:use.length, pairs: use };
+
+  let sumAbs = 0, sumR = 0, sumSq = 0;
+  for (const p of use){
+    sumAbs += Math.abs(p.R - p.T);
+    sumR += p.R;
+    sumSq += (p.R - p.T) ** 2;
+  }
+  const f1 = sumR > 0 ? (sumAbs / sumR) * 100 : null;
+  const meanSq = sumSq / use.length;
+  const f2 = 50 * Math.log10(100 / Math.sqrt(1 + meanSq));
+  return { f1, f2, n: use.length, pairs: use, sumAbs, sumR, sumSq, meanSq };
+}
+
+function checkGuidelines(refStats, testStats){
+  const checks = [];
+  const refMeans = refStats.map(s => s.mean);
+  const testMeans = testStats.map(s => s.mean);
+  const Q = state.Q;
+
+  // 1. Minimum units
+  const minUnits = Math.min(...refStats.map(s=>s.n), ...testStats.map(s=>s.n));
+  checks.push({
+    ok: minUnits >= 12,
+    warn: minUnits >= 6 && minUnits < 12,
+    label: `Se requieren ≥ 12 unidades por producto en cada tiempo (mínimo observado: ${minUnits})`
+  });
+
+  // 2. Same number of time points and same times: implicit (single time array)
+
+  // 3. At least 3 time points (excluding zero)
+  const validTimes = state.timePoints.filter((t,i)=> refMeans[i]!=null && testMeans[i]!=null).length;
+  checks.push({
+    ok: validTimes >= 3,
+    label: `Se requieren ≥ 3 tiempos de muestreo con datos válidos en R y T (observados: ${validTimes})`
+  });
+
+  // 4. Only one time point beyond both reaching Q (typically 85 %)
+  const idxR85 = firstIndexAtOrAbove(refMeans, Q);
+  const idxT85 = firstIndexAtOrAbove(testMeans, Q);
+  const firstBoth85 = (idxR85 >= 0 && idxT85 >= 0) ? Math.max(idxR85, idxT85) : -1;
+  let ptsBeyond = 0;
+  if (firstBoth85 >= 0){
+    ptsBeyond = refMeans.length - 1 - firstBoth85;
+  }
+  checks.push({
+    ok: firstBoth85 >= 0 ? ptsBeyond <= 1 : true,
+    warn: firstBoth85 < 0,
+    label: firstBoth85 >= 0
+      ? `Sólo debe incluirse UN tiempo después de que ambos productos alcancen ${Q} % (observados después: ${ptsBeyond})`
+      : `Ningún producto alcanzó Q = ${Q} % dentro de los tiempos evaluados (verifique si el ensayo es adecuado)`
+  });
+
+  // 5. CV first time point ≤ 20 %, remaining ≤ 10 %
+  let cvOK = true, cvBad = [];
+  for (let i = 0; i < refMeans.length; i++){
+    const limit = (i === 0) ? 20 : 10;
+    if (refStats[i].cv != null && refStats[i].cv > limit) { cvOK = false; cvBad.push(`R t${i+1} (${refStats[i].cv.toFixed(1)}%)`); }
+    if (testStats[i].cv != null && testStats[i].cv > limit) { cvOK = false; cvBad.push(`T t${i+1} (${testStats[i].cv.toFixed(1)}%)`); }
+  }
+  checks.push({
+    ok: cvOK,
+    label: cvOK
+      ? "CV ≤ 20 % en el primer punto y ≤ 10 % en los puntos posteriores en ambos productos"
+      : `Se excede el límite de CV en: ${cvBad.join(", ")}`
+  });
+
+  // 6. Difference between means at each early point (informative)
+  let anyLargeDiff = false;
+  for (let i = 0; i < refMeans.length; i++){
+    if (refMeans[i] != null && testMeans[i] != null && Math.abs(refMeans[i]-testMeans[i]) > 15) anyLargeDiff = true;
+  }
+  checks.push({
+    ok: true, warn: anyLargeDiff,
+    label: anyLargeDiff
+      ? "Se observan diferencias > 15 % entre R y T en al menos un tiempo (informativo)"
+      : "Diferencias entre R y T aceptables en todos los tiempos"
+  });
+
+  // 7. f2 not applicable when >= 85 % in ≤ 15 min for both
+  if (state.timePoints[0] <= 15 && refMeans[0] != null && testMeans[0] != null && refMeans[0] >= 85 && testMeans[0] >= 85){
+    checks.push({
+      ok: true, warn: true,
+      label: `Ambos productos disuelven ≥ 85 % en ≤ 15 min → productos considerados de disolución muy rápida; f2 no es necesario para bioexención`
+    });
+  }
+
+  return { checks, refMeans, testMeans, firstBoth85, ptsBeyond };
+}
+
+function autoSelectN(){
+  const { refMeans, testMeans, firstBoth85 } = checkGuidelines(computeStats("ref"), computeStats("test"));
+  let n;
+  const valid = state.timePoints.map((_,i)=> refMeans[i]!=null && testMeans[i]!=null).filter(Boolean).length;
+  if (firstBoth85 >= 0){
+    n = Math.min(valid, firstBoth85 + 2); // includes first point beyond
+  } else {
+    n = valid;
+  }
+  n = Math.max(3, Math.min(valid, n));
+  $("cfg_n").value = n;
+  state.n = n;
+  recalcAll();
+}
+
+function recalcAll(){
+  const refStats = computeStats("ref");
+  const testStats = computeStats("test");
+  const g = checkGuidelines(refStats, testStats);
+
+  // render checks
+  const ul = $("checks");
+  ul.innerHTML = "";
+  g.checks.forEach(c => {
+    const li = document.createElement("li");
+    const b = document.createElement("span");
+    b.className = "badge " + (c.ok ? (c.warn ? "warn" : "ok") : "bad");
+    b.textContent = c.ok ? (c.warn ? "Aviso" : "OK") : "Falla";
+    li.appendChild(b);
+    const s = document.createElement("span");
+    s.textContent = c.label;
+    li.appendChild(s);
+    ul.appendChild(li);
+  });
+
+  // n auto if 0
+  const validCount = state.timePoints.map((_,i)=> refStats[i].mean!=null && testStats[i].mean!=null).filter(Boolean).length;
+  let n = parseInt($("cfg_n").value) || 0;
+  if (n <= 0){
+    // auto: use guideline-based
+    if (g.firstBoth85 >= 0) n = Math.min(validCount, g.firstBoth85 + 2);
+    else n = validCount;
+    n = Math.max(0, Math.min(validCount, n));
+    $("n_hint").textContent = `n = ${n} (auto, según guías)`;
+  } else {
+    n = Math.min(n, validCount);
+    $("cfg_n").value = n;
+    $("n_hint").textContent = `n = ${n} de ${validCount} tiempos válidos`;
+  }
+  state.n = n;
+
+  const res = computeF1F2(n, g.refMeans, g.testMeans);
+
+  const f1El = $("f1_value"), f2El = $("f2_value");
+  const f1st = $("f1_status"), f2st = $("f2_status");
+  if (res.f1 == null){
+    f1El.textContent = "—"; f2El.textContent = "—";
+    f1El.className = "metric-value"; f2El.className = "metric-value";
+    f1st.textContent = "Datos insuficientes (se requieren ≥ 3 puntos válidos)";
+    f2st.textContent = "Datos insuficientes";
+  } else {
+    f1El.textContent = res.f1.toFixed(2);
+    f2El.textContent = res.f2.toFixed(2);
+    f1El.className = "metric-value " + (res.f1 <= 15 ? "ok" : "bad");
+    f2El.className = "metric-value " + (res.f2 >= 50 && res.f2 <= 100 ? "ok" : "bad");
+    f1st.textContent = `Criterio: 0 ≤ f1 ≤ 15 → ${res.f1 <= 15 ? "CUMPLE (perfiles similares por f1)" : "NO CUMPLE"}`;
+    f2st.textContent = `Criterio: 50 ≤ f2 ≤ 100 → ${res.f2 >= 50 && res.f2 <= 100 ? "PERFILES SIMILARES" : "PERFILES NO SIMILARES"}`;
+  }
+
+  // detail
+  let det = `n usado = ${res.n}\n`;
+  det += `Tiempos usados (min): [${res.pairs.map(p => state.timePoints[p.i]).join(", ")}]\n\n`;
+  det += `Tabla de medias usadas:\n`;
+  det += `  t(min)   R̄(%)     T̄(%)     |R-T|     (R-T)²\n`;
+  res.pairs.forEach(p => {
+    const dif = Math.abs(p.R - p.T);
+    const sq = (p.R - p.T) ** 2;
+    det += `  ${String(state.timePoints[p.i]).padStart(6)}   ${p.R.toFixed(2).padStart(6)}   ${p.T.toFixed(2).padStart(6)}   ${dif.toFixed(2).padStart(6)}    ${sq.toFixed(3).padStart(8)}\n`;
+  });
+  if (res.f1 != null){
+    det += `\nΣ|R-T| = ${res.sumAbs.toFixed(3)}    ΣR = ${res.sumR.toFixed(3)}    Σ(R-T)² = ${res.sumSq.toFixed(3)}\n`;
+    det += `f1 = (Σ|R-T| / ΣR) × 100 = (${res.sumAbs.toFixed(3)} / ${res.sumR.toFixed(3)}) × 100 = ${res.f1.toFixed(4)}\n`;
+    det += `f2 = 50 · log{[1 + (1/n)·Σ(R-T)²]^(-½) · 100}\n`;
+    det += `   = 50 · log{100 / √(1 + ${res.meanSq.toFixed(4)})} = ${res.f2.toFixed(4)}\n`;
+  }
+  $("calc_detail").textContent = det;
+
+  drawChart(refStats, testStats);
+}
+
+function drawChart(refStats, testStats){
+  const cvs = $("chart");
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = cvs.clientWidth || 1000;
+  const cssH = 480;
+  cvs.width = cssW * dpr;
+  cvs.height = cssH * dpr;
+  cvs.style.height = cssH + "px";
+  const ctx = cvs.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const padL = 60, padR = 20, padT = 20, padB = 60;
+  const w = cssW - padL - padR;
+  const h = cssH - padT - padB;
+
+  const times = state.timePoints.slice(0, state.times);
+  const maxT = Math.max(...times, 1);
+  const minT = 0;
+
+  const allY = [];
+  refStats.forEach(s => { if (s.mean != null) allY.push(s.mean + (s.sd||0)); });
+  testStats.forEach(s => { if (s.mean != null) allY.push(s.mean + (s.sd||0)); });
+  const maxY = Math.min(110, Math.max(100, Math.ceil((Math.max(...allY, 100)) / 10) * 10));
+  const minY = 0;
+
+  const xOf = t => padL + (t - minT) / (maxT - minT) * w;
+  const yOf = y => padT + h - (y - minY) / (maxY - minY) * h;
+
+  // grid
+  ctx.strokeStyle = "#e6ebf1";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "#5b6673";
+  ctx.font = "12px system-ui, sans-serif";
+  const yTicks = 10;
+  for (let i = 0; i <= yTicks; i++){
+    const yv = minY + (maxY - minY) * i / yTicks;
+    const y = yOf(yv);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + w, y); ctx.stroke();
+    ctx.fillText(yv.toFixed(0), 10, y + 4);
+  }
+  // Q line
+  ctx.strokeStyle = "#c2c8d1";
+  ctx.setLineDash([4, 4]);
+  const yQ = yOf(state.Q);
+  ctx.beginPath(); ctx.moveTo(padL, yQ); ctx.lineTo(padL + w, yQ); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#8a5602";
+  ctx.fillText(`Q = ${state.Q} %`, padL + w - 60, yQ - 4);
+
+  // x ticks (time points)
+  ctx.fillStyle = "#5b6673";
+  times.forEach(t => {
+    const x = xOf(t);
+    ctx.beginPath(); ctx.moveTo(x, padT + h); ctx.lineTo(x, padT + h + 4); ctx.stroke();
+    ctx.fillText(String(t), x - 8, padT + h + 18);
+  });
+
+  // Axis labels
+  ctx.fillStyle = "#1e2733";
+  ctx.font = "13px system-ui, sans-serif";
+  ctx.fillText("Tiempo (min)", padL + w/2 - 40, cssH - 15);
+  ctx.save();
+  ctx.translate(16, padT + h/2 + 40);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText("Porcentaje disuelto (%)", 0, 0);
+  ctx.restore();
+
+  // Axes
+  ctx.strokeStyle = "#333";
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + h); ctx.lineTo(padL + w, padT + h);
+  ctx.stroke();
+
+  function drawSeries(stats, color){
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+    // line
+    ctx.beginPath();
+    let started = false;
+    stats.forEach((s, i) => {
+      if (s.mean == null) return;
+      const x = xOf(times[i]), y = yOf(s.mean);
+      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // error bars + points
+    stats.forEach((s, i) => {
+      if (s.mean == null) return;
+      const x = xOf(times[i]), y = yOf(s.mean);
+      if (s.sd != null){
+        const y1 = yOf(s.mean + s.sd);
+        const y2 = yOf(s.mean - s.sd);
+        ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-4, y1); ctx.lineTo(x+4, y1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-4, y2); ctx.lineTo(x+4, y2); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI*2); ctx.fill();
+    });
+  }
+
+  drawSeries(refStats, "#0b5cad");
+  drawSeries(testStats, "#b8360a");
+
+  // Legend
+  const refLbl = ($("ref_name").value || "Referencia (R)");
+  const testLbl = ($("test_name").value || "Prueba (T)");
+  ctx.font = "13px system-ui, sans-serif";
+  const lx = padL + 12, ly = padT + 12;
+  ctx.fillStyle = "#fff";
+  ctx.strokeStyle = "#c2c8d1";
+  ctx.fillRect(lx, ly, 260, 44);
+  ctx.strokeRect(lx, ly, 260, 44);
+  ctx.fillStyle = "#0b5cad";
+  ctx.beginPath(); ctx.arc(lx + 12, ly + 14, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#1e2733";
+  ctx.fillText(refLbl.length > 32 ? refLbl.slice(0,30)+"…" : refLbl, lx + 24, ly + 18);
+  ctx.fillStyle = "#b8360a";
+  ctx.beginPath(); ctx.arc(lx + 12, ly + 34, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#1e2733";
+  ctx.fillText(testLbl.length > 32 ? testLbl.slice(0,30)+"…" : testLbl, lx + 24, ly + 38);
+}
+
+function loadExample(){
+  state.vessels = 12; state.times = 5;
+  state.timePoints = [10, 15, 20, 30, 45];
+  $("cfg_vessels").value = 12;
+  $("cfg_times").value = 5;
+  $("cfg_Q").value = 85;
+  state.Q = 85;
+
+  // Example datasets (%)
+  const refBaseline = [55, 68, 78, 87, 94];
+  const testBaseline = [50, 63, 74, 84, 92];
+  state.ref = refBaseline.map(m => Array.from({length:12}, () => +(m + (Math.random()-0.5)*4).toFixed(2)));
+  state.test = testBaseline.map(m => Array.from({length:12}, () => +(m + (Math.random()-0.5)*4).toFixed(2)));
+
+  $("ref_name").value = "Producto Referencia 500 mg";
+  $("ref_lot").value = "R-2025-001";
+  $("ref_date").value = "2025-03-15";
+  $("ref_manuf").value = "Laboratorio Innovador S.A.";
+  $("test_name").value = "Producto Prueba 500 mg";
+  $("test_lot").value = "T-2025-042";
+  $("test_date").value = "2025-06-01";
+  $("test_manuf").value = "Genéricos ABC S.A.S.";
+
+  renderTable("table_ref","ref");
+  renderTable("table_test","test");
+  $("cfg_n").value = 0;
+  recalcAll();
+}
+
+function clearAllData(){
+  if (!confirm("¿Desea borrar todos los datos ingresados?")) return;
+  state.ref = initMatrix(state.times, state.vessels);
+  state.test = initMatrix(state.times, state.vessels);
+  ["ref_name","ref_lot","ref_date","ref_manuf","test_name","test_lot","test_date","test_manuf"].forEach(id => $(id).value = "");
+  renderTable("table_ref","ref");
+  renderTable("table_test","test");
+  recalcAll();
+}
+
+function exportCSV(){
+  const lines = [];
+  lines.push("Calculador f1/f2 - Perfiles de Disolución");
+  lines.push("");
+  lines.push("Producto de Referencia (R)");
+  lines.push(`Nombre,${$("ref_name").value}`);
+  lines.push(`Lote,${$("ref_lot").value}`);
+  lines.push(`Fecha fabricación,${$("ref_date").value}`);
+  lines.push(`Fabricante,${$("ref_manuf").value}`);
+  lines.push("");
+  lines.push("Producto de Prueba (T)");
+  lines.push(`Nombre,${$("test_name").value}`);
+  lines.push(`Lote,${$("test_lot").value}`);
+  lines.push(`Fecha fabricación,${$("test_date").value}`);
+  lines.push(`Fabricante,${$("test_manuf").value}`);
+  lines.push("");
+
+  ["ref","test"].forEach(which => {
+    lines.push(`Datos ${which === "ref" ? "Referencia" : "Prueba"} (%)`);
+    lines.push(["Vaso", ...state.timePoints.map(t => `t=${t} min`)].join(","));
+    for (let j = 0; j < state.vessels; j++){
+      lines.push([j+1, ...state[which].map(row => row[j] ?? "")].join(","));
+    }
+    lines.push("");
+  });
+
+  const refStats = computeStats("ref"), testStats = computeStats("test");
+  lines.push("Tiempo,R media,R DE,R CV%,T media,T DE,T CV%");
+  for (let i = 0; i < state.times; i++){
+    lines.push([state.timePoints[i], fmt(refStats[i].mean), fmt(refStats[i].sd), fmt(refStats[i].cv),
+                fmt(testStats[i].mean), fmt(testStats[i].sd), fmt(testStats[i].cv)].join(","));
+  }
+  lines.push("");
+  lines.push(`n usado,${state.n}`);
+  lines.push(`f1,${$("f1_value").textContent}`);
+  lines.push(`f2,${$("f2_value").textContent}`);
+
+  const csv = lines.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "f1_f2_perfiles.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Re-render on identity name change (for chart legend)
+["ref_name","test_name"].forEach(id => document.addEventListener("input", e => {
+  if (e.target && e.target.id === id) drawChart(computeStats("ref"), computeStats("test"));
+}));
+
+$("cfg_n").addEventListener("input", () => { state.n = parseInt($("cfg_n").value) || 0; recalcAll(); });
+$("cfg_Q").addEventListener("input", () => { state.Q = parseFloat($("cfg_Q").value) || 85; recalcAll(); });
+
+window.addEventListener("resize", () => drawChart(computeStats("ref"), computeStats("test")));
+
+// initial
+rebuildTables();
+
+</script>
+</body>
+</html>
