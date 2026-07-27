@@ -166,6 +166,31 @@
     button, .no-print { display: none !important; }
     .card { break-inside: avoid; border-color: #999; box-shadow: none; }
   }
+  .methods-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 1100px) { .methods-grid { grid-template-columns: 1fr; } }
+  .method-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; background: #fafbfd; }
+  .method-card h3 { margin: 0 0 6px; font-size: 14px; color: var(--primary); }
+  .method-card .desc { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
+  .method-card .stat-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12.5px; border-bottom: 1px dashed var(--border); }
+  .method-card .stat-row:last-child { border-bottom: none; }
+  .method-card .stat-label { color: var(--muted); }
+  .method-card .stat-val { font-family: ui-monospace, Menlo, monospace; font-weight: 600; }
+  .method-card .verdict { margin-top: 10px; padding: 8px; border-radius: 5px; font-weight: 600; font-size: 13px; text-align: center; }
+  .method-card .verdict.ok { background: #d6f0e2; color: #0e6a48; border: 1px solid #a8dcc0; }
+  .method-card .verdict.bad { background: #fadfd2; color: #9c2f08; border: 1px solid #ecb59a; }
+  .method-card .verdict.pending { background: #eef2f7; color: var(--muted); border: 1px dashed var(--border-strong); }
+  .method-config { margin-top: 10px; padding: 8px; background: #eef2f7; border-radius: 5px; font-size: 12px; }
+  .method-config label { display: inline-block; margin-right: 8px; }
+  .method-config input { width: 70px; }
+  .progress-bar { width: 100%; height: 8px; background: #e0e5eb; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .progress-bar > div { height: 100%; background: var(--primary); width: 0%; transition: width 0.05s; }
+  .hist-canvas { display: block; width: 100%; height: 100px; margin-top: 6px; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+  .comparison-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  .comparison-table th, .comparison-table td { border: 1px solid var(--border-strong); padding: 6px 8px; text-align: left; }
+  .comparison-table th { background: #eef2f7; }
+  .comparison-table td.center { text-align: center; }
+  .comparison-table td.ok { background: #eaf7f0; color: #0e6a48; font-weight: 600; }
+  .comparison-table td.bad { background: #fbe8dd; color: #9c2f08; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -292,14 +317,109 @@
 </section>
 
 <section class="card">
-  <h2>7. Gráfica de perfiles</h2>
+  <h2>7. Métodos estadísticos avanzados</h2>
+  <p style="font-size: 12.5px; color: var(--muted); margin: 0 0 12px;">
+    Métodos complementarios recomendados por la literatura reciente cuando la variabilidad es alta o para un análisis más robusto:
+    <b>BCa Bootstrap f<sub>2</sub></b> (Shah/Efron), <b>MSD</b> (Distancia de Mahalanobis, Tsong et al. 1996) y
+    <b>T2EQ</b> (Hoffelder-Wellek, aceptado por EMA 2018 para perfiles altamente variables).
+  </p>
+  <div class="methods-grid">
+
+    <div class="method-card" id="method_bca">
+      <h3>BCa Bootstrap f<sub>2</sub></h3>
+      <div class="desc">
+        Remuestreo con reemplazo de vasos (B iteraciones), corrección de sesgo (z<sub>0</sub>) y aceleración (a) por jackknife.
+        Criterio regulatorio: <b>LCL 90 % ≥ 50</b> ⇒ perfiles similares.
+      </div>
+      <div class="method-config">
+        <label>B: <input type="number" id="cfg_B" value="5000" min="500" max="20000" step="500"></label>
+        <label>α: <input type="number" id="cfg_bca_alpha" value="0.05" min="0.01" max="0.20" step="0.01"></label>
+        <label>Semilla: <input type="number" id="cfg_seed" value="12345" min="1" step="1"></label>
+        <button class="secondary" style="padding: 4px 10px; font-size: 12px; margin-top: 6px;" onclick="runBootstrap()">Ejecutar bootstrap</button>
+        <div class="progress-bar"><div id="bca_progress"></div></div>
+      </div>
+      <div id="bca_stats" style="margin-top: 10px;">
+        <div class="stat-row"><span class="stat-label">f<sub>2</sub> observado</span><span class="stat-val" id="bca_f2hat">—</span></div>
+        <div class="stat-row"><span class="stat-label">Media bootstrap</span><span class="stat-val" id="bca_mean">—</span></div>
+        <div class="stat-row"><span class="stat-label">Sesgo (z<sub>0</sub>)</span><span class="stat-val" id="bca_z0">—</span></div>
+        <div class="stat-row"><span class="stat-label">Aceleración (a)</span><span class="stat-val" id="bca_a">—</span></div>
+        <div class="stat-row"><span class="stat-label">LCL (BCa)</span><span class="stat-val" id="bca_lcl">—</span></div>
+        <div class="stat-row"><span class="stat-label">UCL (BCa)</span><span class="stat-val" id="bca_ucl">—</span></div>
+      </div>
+      <canvas id="bca_hist" class="hist-canvas"></canvas>
+      <div class="verdict pending" id="bca_verdict">Pendiente — ejecute el bootstrap</div>
+    </div>
+
+    <div class="method-card" id="method_msd">
+      <h3>MSD — Distancia de Mahalanobis (ACLMD)</h3>
+      <div class="desc">
+        Método de Tsong et al. (1996). Utiliza la matriz de covarianza combinada.
+        Límite de similitud: D<sup>T</sup>S<sup>-1</sup>D con D = (10, 10, …).
+        Criterio: <b>UCL 90 % (MD) ≤ D<sub>M,máx</sub></b>.
+      </div>
+      <div class="method-config">
+        <label>δ (%): <input type="number" id="cfg_delta_msd" value="10" min="1" max="30" step="1"></label>
+        <label>α: <input type="number" id="cfg_msd_alpha" value="0.10" min="0.01" max="0.20" step="0.01"></label>
+      </div>
+      <div id="msd_stats" style="margin-top: 10px;">
+        <div class="stat-row"><span class="stat-label">MD (observado)</span><span class="stat-val" id="msd_md">—</span></div>
+        <div class="stat-row"><span class="stat-label">D<sub>M</sub> (√MD)</span><span class="stat-val" id="msd_dm">—</span></div>
+        <div class="stat-row"><span class="stat-label">Límite D<sub>M,máx</sub></span><span class="stat-val" id="msd_dmax">—</span></div>
+        <div class="stat-row"><span class="stat-label">UCL D<sub>M</sub> (90 %)</span><span class="stat-val" id="msd_ucl">—</span></div>
+        <div class="stat-row"><span class="stat-label">Grados libertad</span><span class="stat-val" id="msd_df">—</span></div>
+        <div class="stat-row"><span class="stat-label">Hotelling T²</span><span class="stat-val" id="msd_t2">—</span></div>
+      </div>
+      <div class="verdict pending" id="msd_verdict">Datos insuficientes</div>
+    </div>
+
+    <div class="method-card" id="method_t2eq">
+      <h3>T2EQ — Hoffelder / Wellek</h3>
+      <div class="desc">
+        Test exacto de equivalencia basado en T² con margen EM = D<sup>T</sup>S<sup>-1</sup>D.
+        Distribución F no-central. Criterio: <b>p-valor &lt; α</b> ⇒ equivalencia demostrada.
+        Recomendado por EMA (2018) para perfiles altamente variables.
+      </div>
+      <div class="method-config">
+        <label>δ (%): <input type="number" id="cfg_delta_t2eq" value="10" min="1" max="30" step="1"></label>
+        <label>α: <input type="number" id="cfg_t2eq_alpha" value="0.05" min="0.01" max="0.20" step="0.01"></label>
+      </div>
+      <div id="t2eq_stats" style="margin-top: 10px;">
+        <div class="stat-row"><span class="stat-label">T² observado</span><span class="stat-val" id="t2eq_T2">—</span></div>
+        <div class="stat-row"><span class="stat-label">EM (margen)</span><span class="stat-val" id="t2eq_EM">—</span></div>
+        <div class="stat-row"><span class="stat-label">F observado</span><span class="stat-val" id="t2eq_F">—</span></div>
+        <div class="stat-row"><span class="stat-label">gl (df<sub>1</sub>, df<sub>2</sub>)</span><span class="stat-val" id="t2eq_df">—</span></div>
+        <div class="stat-row"><span class="stat-label">λ (no-centralidad)</span><span class="stat-val" id="t2eq_lambda">—</span></div>
+        <div class="stat-row"><span class="stat-label"><b>p-valor</b></span><span class="stat-val" id="t2eq_p">—</span></div>
+      </div>
+      <div class="verdict pending" id="t2eq_verdict">Datos insuficientes</div>
+    </div>
+
+  </div>
+
+  <h3 style="margin: 20px 0 8px; font-size: 14px; color: var(--primary);">Resumen comparativo</h3>
+  <table class="comparison-table" id="comparison_table">
+    <thead>
+      <tr>
+        <th>Método</th>
+        <th>Estadístico</th>
+        <th>Criterio</th>
+        <th>Resultado</th>
+        <th>Similares</th>
+      </tr>
+    </thead>
+    <tbody id="comparison_body"></tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>8. Gráfica de perfiles</h2>
   <div class="chart-wrap">
     <canvas id="chart" width="1000" height="480"></canvas>
   </div>
 </section>
 
 <section class="card no-print">
-  <h2>8. Exportar / Imprimir</h2>
+  <h2>9. Exportar / Imprimir</h2>
   <button onclick="window.print()">Imprimir / Guardar como PDF</button>
   <button class="secondary" onclick="exportCSV()">Exportar datos a CSV</button>
 </section>
@@ -319,11 +439,598 @@ const state = {
   vessels: 12,
   times: 5,
   Q: 85,
-  n: 0,           // 0 = auto
+  n: 0,
   timePoints: [15, 30, 45, 60, 90],
-  ref: [],        // ref[time][vessel]
-  test: []
+  ref: [],
+  test: [],
+  bca: null,
+  msd: null,
+  t2eq: null
 };
+
+// ---------- Numerical helpers ----------
+function lgamma(x) {
+  const g = 7;
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+             771.32342877765313, -176.61502916214059, 12.507343278686905,
+             -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function logBeta(a, b) { return lgamma(a) + lgamma(b) - lgamma(a + b); }
+
+// Regularized incomplete beta I_x(a, b) via continued fraction (Numerical Recipes)
+function betacf(a, b, x) {
+  const MAXIT = 200, EPS = 3e-8, FPMIN = 1e-30;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c; h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+function betai(a, b, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) return bt * betacf(a, b, x) / a;
+  return 1 - bt * betacf(b, a, 1 - x) / b;
+}
+
+// Normal CDF (Abramowitz & Stegun 7.1.26)
+function normCdf(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989422804014327 * Math.exp(-z * z / 2);
+  const p = d * t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return z > 0 ? 1 - p : p;
+}
+// Inverse normal (Beasley-Springer-Moro)
+function normInv(p) {
+  if (p <= 0) return -1e10;
+  if (p >= 1) return 1e10;
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+             1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+             6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+             -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl;
+  let q, r;
+  if (p < pl) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  if (p <= ph) {
+    q = p - 0.5; r = q * q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }
+  q = Math.sqrt(-2 * Math.log(1 - p));
+  return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+
+// Non-central F CDF via Poisson mixture of central Beta CDFs
+// P(F <= f | df1, df2, ncp) = sum_j Pois(j; ncp/2) * I(df1*f/(df2+df1*f); df1/2 + j, df2/2)
+function ncFCdf(f, df1, df2, ncp) {
+  if (f <= 0) return 0;
+  const y = df1 * f / (df2 + df1 * f);
+  const halfNcp = ncp / 2;
+  const MAX_TERMS = 500, EPS = 1e-10;
+  let sum = 0, term, poissonWeight;
+  // Start from mode of Poisson (~floor(halfNcp))
+  const mode = Math.max(0, Math.floor(halfNcp));
+  // Compute at mode
+  let logPois = -halfNcp + mode * Math.log(Math.max(halfNcp, 1e-300)) - lgamma(mode + 1);
+  poissonWeight = Math.exp(logPois);
+  let beta = betai(df1 / 2 + mode, df2 / 2, y);
+  term = poissonWeight * beta;
+  sum += term;
+  // Forward
+  let j = mode, w = poissonWeight, bt = beta;
+  for (let k = 0; k < MAX_TERMS; k++) {
+    j++;
+    w *= halfNcp / j;
+    bt = betai(df1 / 2 + j, df2 / 2, y);
+    const inc = w * bt;
+    sum += inc;
+    if (inc < EPS * sum) break;
+  }
+  // Backward
+  j = mode; w = poissonWeight;
+  for (let k = 0; k < MAX_TERMS; k++) {
+    if (j === 0) break;
+    w *= j / halfNcp;
+    j--;
+    bt = betai(df1 / 2 + j, df2 / 2, y);
+    const inc = w * bt;
+    sum += inc;
+    if (inc < EPS * sum) break;
+  }
+  return Math.min(1, Math.max(0, sum));
+}
+
+// ---------- Matrix helpers (small, dense) ----------
+function matZeros(r, c) { return Array.from({length: r}, () => new Array(c).fill(0)); }
+function matClone(A) { return A.map(row => row.slice()); }
+function matInvert(A) {
+  const n = A.length;
+  const M = matZeros(n, 2 * n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) M[i][j] = A[i][j];
+    M[i][n + i] = 1;
+  }
+  for (let i = 0; i < n; i++) {
+    let piv = i;
+    for (let k = i + 1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[piv][i])) piv = k;
+    if (Math.abs(M[piv][i]) < 1e-14) throw new Error("Matriz singular — no invertible");
+    if (piv !== i) { const tmp = M[i]; M[i] = M[piv]; M[piv] = tmp; }
+    const inv = 1 / M[i][i];
+    for (let j = 0; j < 2 * n; j++) M[i][j] *= inv;
+    for (let k = 0; k < n; k++) {
+      if (k === i) continue;
+      const f = M[k][i];
+      if (f === 0) continue;
+      for (let j = 0; j < 2 * n; j++) M[k][j] -= f * M[i][j];
+    }
+  }
+  const inv = matZeros(n, n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) inv[i][j] = M[i][n + j];
+  return inv;
+}
+function quadForm(v, A) {
+  const n = v.length;
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    let row = 0;
+    for (let j = 0; j < n; j++) row += A[i][j] * v[j];
+    s += v[i] * row;
+  }
+  return s;
+}
+
+// Seeded PRNG (mulberry32)
+function makeRng(seed) {
+  let s = seed >>> 0;
+  return function () {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------- Dissolution-specific ----------
+function meanVec(rows) { return rows.map(r => r.reduce((a,b)=>a+b,0) / r.length); }
+function cleanColumns(data) {
+  // Remove any vessel index j where ANY time point has null; return matrix of complete vessels
+  const T = data.length;
+  const V = data[0].length;
+  const cols = [];
+  for (let j = 0; j < V; j++) {
+    let ok = true;
+    for (let i = 0; i < T; i++) if (data[i][j] == null || isNaN(data[i][j])) { ok = false; break; }
+    if (ok) {
+      const col = [];
+      for (let i = 0; i < T; i++) col.push(data[i][j]);
+      cols.push(col);
+    }
+  }
+  return cols; // cols[j][i] : vessel j, time i
+}
+function colsToRows(cols) {
+  if (cols.length === 0) return [];
+  const T = cols[0].length;
+  return Array.from({length: T}, (_, i) => cols.map(c => c[i]));
+}
+function computeF2FromMeans(mR, mT) {
+  const n = mR.length;
+  let ss = 0;
+  for (let i = 0; i < n; i++) ss += (mR[i] - mT[i]) ** 2;
+  return 50 * Math.log10(100 / Math.sqrt(1 + ss / n));
+}
+function covMatrix(vessels, meanRow) {
+  // vessels: array of columns (one profile per vessel), each of length p
+  const p = meanRow.length;
+  const n = vessels.length;
+  const S = matZeros(p, p);
+  if (n < 2) return S;
+  for (const v of vessels) {
+    for (let i = 0; i < p; i++) {
+      const di = v[i] - meanRow[i];
+      for (let j = 0; j < p; j++) S[i][j] += di * (v[j] - meanRow[j]);
+    }
+  }
+  const f = 1 / (n - 1);
+  for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) S[i][j] *= f;
+  return S;
+}
+
+// ---------- BCa Bootstrap for f2 ----------
+function runBootstrap() {
+  const refCols = cleanColumns(state.ref);
+  const testCols = cleanColumns(state.test);
+  const nR = refCols.length, nT = testCols.length;
+  if (nR < 6 || nT < 6) {
+    setBcaError("Se requieren al menos 6 vasos completos por producto.");
+    return;
+  }
+  const B = Math.max(100, Math.min(20000, parseInt($("cfg_B").value) || 5000));
+  const alpha = Math.max(0.005, Math.min(0.25, parseFloat($("cfg_bca_alpha").value) || 0.05));
+  const seed = Math.max(1, parseInt($("cfg_seed").value) || 12345);
+  const rng = makeRng(seed);
+
+  const T = state.times;
+  const meanR = new Array(T), meanT = new Array(T);
+  for (let i = 0; i < T; i++) {
+    meanR[i] = refCols.reduce((s, c) => s + c[i], 0) / nR;
+    meanT[i] = testCols.reduce((s, c) => s + c[i], 0) / nT;
+  }
+  const f2Hat = computeF2FromMeans(meanR, meanT);
+
+  // Bootstrap in chunks with progress
+  const boot = new Float64Array(B);
+  const bar = $("bca_progress");
+  const CHUNK = 500;
+  let done = 0;
+
+  function chunkStep() {
+    const end = Math.min(B, done + CHUNK);
+    for (let b = done; b < end; b++) {
+      let mR_i, mT_i;
+      const mR = new Array(T).fill(0);
+      const mT = new Array(T).fill(0);
+      for (let k = 0; k < nR; k++) {
+        const idx = Math.floor(rng() * nR);
+        const col = refCols[idx];
+        for (let i = 0; i < T; i++) mR[i] += col[i];
+      }
+      for (let k = 0; k < nT; k++) {
+        const idx = Math.floor(rng() * nT);
+        const col = testCols[idx];
+        for (let i = 0; i < T; i++) mT[i] += col[i];
+      }
+      for (let i = 0; i < T; i++) { mR[i] /= nR; mT[i] /= nT; }
+      boot[b] = computeF2FromMeans(mR, mT);
+    }
+    done = end;
+    bar.style.width = (100 * done / B) + "%";
+    if (done < B) {
+      setTimeout(chunkStep, 0);
+    } else {
+      finishBootstrap(boot, f2Hat, alpha, nR, nT, refCols, testCols, T);
+    }
+  }
+  chunkStep();
+}
+function setBcaError(msg) {
+  $("bca_verdict").className = "verdict bad";
+  $("bca_verdict").textContent = msg;
+  ["bca_f2hat","bca_mean","bca_z0","bca_a","bca_lcl","bca_ucl"].forEach(id => $(id).textContent = "—");
+  updateComparison();
+}
+function finishBootstrap(boot, f2Hat, alpha, nR, nT, refCols, testCols, T) {
+  const B = boot.length;
+  const sorted = Array.from(boot).sort((a,b) => a - b);
+  const mean = sorted.reduce((a,b) => a + b, 0) / B;
+  const countLess = sorted.filter(x => x < f2Hat).length;
+  let p0 = countLess / B;
+  if (p0 <= 0) p0 = 0.5 / B;
+  if (p0 >= 1) p0 = 1 - 0.5 / B;
+  const z0 = normInv(p0);
+
+  // Jackknife: leave one vessel out (from R and T combined)
+  const jk = [];
+  const totalV = nR + nT;
+  const fullMR = new Array(T), fullMT = new Array(T);
+  for (let i = 0; i < T; i++) {
+    fullMR[i] = refCols.reduce((s,c)=>s+c[i],0);
+    fullMT[i] = testCols.reduce((s,c)=>s+c[i],0);
+  }
+  for (let k = 0; k < nR; k++) {
+    const mR = new Array(T);
+    for (let i = 0; i < T; i++) mR[i] = (fullMR[i] - refCols[k][i]) / (nR - 1);
+    const mT = fullMT.map(s => s / nT);
+    jk.push(computeF2FromMeans(mR, mT));
+  }
+  for (let k = 0; k < nT; k++) {
+    const mT = new Array(T);
+    for (let i = 0; i < T; i++) mT[i] = (fullMT[i] - testCols[k][i]) / (nT - 1);
+    const mR = fullMR.map(s => s / nR);
+    jk.push(computeF2FromMeans(mR, mT));
+  }
+  const jkMean = jk.reduce((a,b)=>a+b,0) / jk.length;
+  let num = 0, den = 0;
+  for (const v of jk) {
+    const d = jkMean - v;
+    num += d ** 3;
+    den += d * d;
+  }
+  const a = den === 0 ? 0 : num / (6 * Math.pow(den, 1.5));
+
+  const zLo = normInv(alpha);
+  const zHi = normInv(1 - alpha);
+  function bcaQuantile(z) {
+    const adj = z0 + (z0 + z) / (1 - a * (z0 + z));
+    const p = normCdf(adj);
+    const idx = Math.max(0, Math.min(B - 1, Math.floor(p * B)));
+    return sorted[idx];
+  }
+  const lcl = bcaQuantile(zLo);
+  const ucl = bcaQuantile(zHi);
+
+  state.bca = { f2Hat, mean, z0, a, lcl, ucl, alpha, B, sorted };
+
+  $("bca_f2hat").textContent = f2Hat.toFixed(3);
+  $("bca_mean").textContent = mean.toFixed(3);
+  $("bca_z0").textContent = z0.toFixed(4);
+  $("bca_a").textContent = a.toFixed(5);
+  $("bca_lcl").textContent = lcl.toFixed(3);
+  $("bca_ucl").textContent = ucl.toFixed(3);
+  const ok = lcl >= 50;
+  const v = $("bca_verdict");
+  v.className = "verdict " + (ok ? "ok" : "bad");
+  v.textContent = ok
+    ? `SIMILARES — LCL(${(100*(1-alpha)).toFixed(0)}%) = ${lcl.toFixed(2)} ≥ 50`
+    : `NO SIMILARES — LCL(${(100*(1-alpha)).toFixed(0)}%) = ${lcl.toFixed(2)} < 50`;
+
+  drawBcaHistogram(sorted, f2Hat, lcl, ucl);
+  updateComparison();
+}
+function drawBcaHistogram(sorted, f2Hat, lcl, ucl) {
+  const cvs = $("bca_hist");
+  const dpr = window.devicePixelRatio || 1;
+  const w = cvs.clientWidth || 300, h = 100;
+  cvs.width = w * dpr; cvs.height = h * dpr;
+  cvs.style.height = h + "px";
+  const ctx = cvs.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const bins = 40;
+  const min = sorted[0], max = sorted[sorted.length - 1];
+  const span = Math.max(max - min, 1e-6);
+  const hist = new Array(bins).fill(0);
+  for (const v of sorted) {
+    const b = Math.min(bins - 1, Math.floor((v - min) / span * bins));
+    hist[b]++;
+  }
+  const hMax = Math.max(...hist);
+  const bw = w / bins;
+  ctx.fillStyle = "#8ab4de";
+  for (let i = 0; i < bins; i++) {
+    const bh = (hist[i] / hMax) * (h - 20);
+    ctx.fillRect(i * bw, h - bh - 4, bw - 1, bh);
+  }
+  // markers
+  function xOf(v) { return (v - min) / span * w; }
+  ctx.strokeStyle = "#0b5cad"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(xOf(f2Hat), 4); ctx.lineTo(xOf(f2Hat), h - 4); ctx.stroke();
+  ctx.strokeStyle = "#b8360a"; ctx.lineWidth = 1.5;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(xOf(lcl), 4); ctx.lineTo(xOf(lcl), h - 4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xOf(ucl), 4); ctx.lineTo(xOf(ucl), h - 4); ctx.stroke();
+  // f2=50 line
+  if (min <= 50 && max >= 50) {
+    ctx.strokeStyle = "#0e6a48"; ctx.setLineDash([2,2]);
+    ctx.beginPath(); ctx.moveTo(xOf(50), 4); ctx.lineTo(xOf(50), h - 4); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#333"; ctx.font = "10px system-ui, sans-serif";
+  ctx.fillText(min.toFixed(1), 2, h - 8);
+  ctx.fillText(max.toFixed(1), w - 30, h - 8);
+}
+
+// ---------- MSD (ACLMD) and T2EQ ----------
+function computeMsdT2eq() {
+  const refCols = cleanColumns(state.ref);
+  const testCols = cleanColumns(state.test);
+  const nR = refCols.length, nT = testCols.length;
+  const T = state.times;
+  const dMsdEl = parseFloat($("cfg_delta_msd").value) || 10;
+  const alphaMsd = Math.max(0.005, Math.min(0.25, parseFloat($("cfg_msd_alpha").value) || 0.10));
+  const dT2eq = parseFloat($("cfg_delta_t2eq").value) || 10;
+  const alphaT2 = Math.max(0.005, Math.min(0.25, parseFloat($("cfg_t2eq_alpha").value) || 0.05));
+
+  function insufficient(msg) {
+    state.msd = state.t2eq = null;
+    ["msd_md","msd_dm","msd_dmax","msd_ucl","msd_df","msd_t2"].forEach(id => $(id).textContent = "—");
+    ["t2eq_T2","t2eq_EM","t2eq_F","t2eq_df","t2eq_lambda","t2eq_p"].forEach(id => $(id).textContent = "—");
+    $("msd_verdict").className = "verdict pending"; $("msd_verdict").textContent = msg;
+    $("t2eq_verdict").className = "verdict pending"; $("t2eq_verdict").textContent = msg;
+    updateComparison();
+  }
+  if (nR < T + 2 || nT < T + 2) {
+    insufficient(`Necesita ≥ ${T + 2} vasos completos por producto (T = ${T}). Actual R=${nR}, T=${nT}`);
+    return;
+  }
+
+  const p = T;
+  const meanR = new Array(p), meanT = new Array(p);
+  for (let i = 0; i < p; i++) {
+    meanR[i] = refCols.reduce((s,c)=>s+c[i],0) / nR;
+    meanT[i] = testCols.reduce((s,c)=>s+c[i],0) / nT;
+  }
+  const diff = meanR.map((m,i) => m - meanT[i]);
+  const Sr = covMatrix(refCols, meanR);
+  const St = covMatrix(testCols, meanT);
+  const Sp = matZeros(p, p);
+  const den = nR + nT - 2;
+  for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) Sp[i][j] = ((nR - 1) * Sr[i][j] + (nT - 1) * St[i][j]) / den;
+
+  let Sinv;
+  try { Sinv = matInvert(Sp); }
+  catch (e) { insufficient("Matriz de covarianza singular — datos degenerados."); return; }
+
+  // MSD point estimate (squared Mahalanobis distance)
+  const MDsq = quadForm(diff, Sinv);
+  const DM = Math.sqrt(Math.max(0, MDsq));
+
+  // Hotelling T2
+  const nPool = (nR * nT) / (nR + nT);
+  const T2 = nPool * MDsq;
+
+  // ACLMD (Tsong 1996): confidence interval on Mahalanobis distance
+  // Upper 90% confidence limit on DM ~ sqrt(MDsq_upper), where
+  //   MDsq_upper based on F-distribution scaling
+  // Following Tsong: K = (nR + nT - p - 1) / ((nR + nT - 2) * p) * nPool
+  //   F_crit = F_{1-alpha}(p, nR+nT-p-1)
+  //   Upper CL of MD^2 = MDsq * (1 + p*F_crit/(K*MDsq)) — Wellek-style
+  // Simpler: DM_upper^2 = MDsq * (1 + sqrt((p * F_crit) / (K * MDsq * ...))) approximations vary.
+  // We use the standard: (n-p-1)/((n-2)*p) * T2 ~ F(p, n-p-1)
+  // Two-sided 90% CI: alpha=0.10, one-sided upper -> use F_{1-alpha}
+  const df1 = p;
+  const df2 = nR + nT - p - 1;
+  // F critical (invert central F CDF) — for MSD upper CL
+  function invF(prob, df1, df2) {
+    // Bisection on F CDF: I(df1*f/(df2+df1*f); df1/2, df2/2)
+    let lo = 0.0001, hi = 1000;
+    for (let it = 0; it < 100; it++) {
+      const mid = (lo + hi) / 2;
+      const y = df1 * mid / (df2 + df1 * mid);
+      const cdf = betai(df1 / 2, df2 / 2, y);
+      if (cdf < prob) lo = mid; else hi = mid;
+      if (hi - lo < 1e-6) break;
+    }
+    return (lo + hi) / 2;
+  }
+  const Fcrit_msd = invF(1 - alphaMsd, df1, df2);
+  // Upper CI for MD^2 by inversion of non-central F (bisection)
+  function upperMDsq(prob) {
+    // Find ncp such that ncFCdf(F_obs_center, df1, df2, ncp) = prob (using F_obs = MDsq*K)
+    const K = (nR + nT - p - 1) / ((nR + nT - 2) * p);
+    const F_obs = K * T2;
+    let lo = 0, hi = Math.max(1, T2 * 4 + 100);
+    for (let it = 0; it < 80; it++) {
+      const mid = (lo + hi) / 2;
+      const cdf = ncFCdf(F_obs, df1, df2, mid);
+      if (cdf > prob) lo = mid; else hi = mid;
+      if (hi - lo < 1e-4) break;
+    }
+    const ncp = (lo + hi) / 2;
+    return ncp / nPool; // MDsq_upper = ncp / nPool
+  }
+  const MDsq_ucl = upperMDsq(alphaMsd);
+  const DM_ucl = Math.sqrt(Math.max(0, MDsq_ucl));
+
+  // D limit vector (delta at every time point)
+  const Dvec_msd = new Array(p).fill(dMsdEl);
+  const DMmax = Math.sqrt(Math.max(0, quadForm(Dvec_msd, Sinv)));
+
+  state.msd = { MDsq, DM, DM_ucl, DMmax, T2, df1, df2, nR, nT, alpha: alphaMsd, delta: dMsdEl };
+  $("msd_md").textContent = MDsq.toFixed(4);
+  $("msd_dm").textContent = DM.toFixed(4);
+  $("msd_dmax").textContent = DMmax.toFixed(4);
+  $("msd_ucl").textContent = DM_ucl.toFixed(4);
+  $("msd_df").textContent = `${df1}, ${df2}`;
+  $("msd_t2").textContent = T2.toFixed(3);
+  const okMsd = DM_ucl <= DMmax;
+  const vm = $("msd_verdict");
+  vm.className = "verdict " + (okMsd ? "ok" : "bad");
+  vm.textContent = okMsd
+    ? `SIMILARES — UCL D_M = ${DM_ucl.toFixed(3)} ≤ D_M,máx = ${DMmax.toFixed(3)}`
+    : `NO SIMILARES — UCL D_M = ${DM_ucl.toFixed(3)} > D_M,máx = ${DMmax.toFixed(3)}`;
+
+  // T2EQ (Wellek / Hoffelder): H0: MDsq >= EM; H1: MDsq < EM
+  // EM = D' Sinv D, D = (delta,...,delta), delta = dT2eq
+  const Dvec_t2 = new Array(p).fill(dT2eq);
+  const EM = quadForm(Dvec_t2, Sinv);
+  const K = (nR + nT - p - 1) / ((nR + nT - 2) * p);
+  const F_obs = K * T2;
+  const lambda = nPool * EM; // non-centrality at H0 boundary
+  const pValue = ncFCdf(F_obs, df1, df2, lambda);
+  state.t2eq = { T2, EM, F: F_obs, df1, df2, lambda, p: pValue, alpha: alphaT2, delta: dT2eq };
+  $("t2eq_T2").textContent = T2.toFixed(3);
+  $("t2eq_EM").textContent = EM.toFixed(4);
+  $("t2eq_F").textContent = F_obs.toFixed(4);
+  $("t2eq_df").textContent = `${df1}, ${df2}`;
+  $("t2eq_lambda").textContent = lambda.toFixed(3);
+  $("t2eq_p").textContent = pValue < 1e-4 ? pValue.toExponential(2) : pValue.toFixed(4);
+  const okT = pValue < alphaT2;
+  const vt = $("t2eq_verdict");
+  vt.className = "verdict " + (okT ? "ok" : "bad");
+  vt.textContent = okT
+    ? `EQUIVALENTES — p = ${pValue < 1e-4 ? pValue.toExponential(2) : pValue.toFixed(4)} < α = ${alphaT2}`
+    : `NO EQUIVALENTES — p = ${pValue < 1e-4 ? pValue.toExponential(2) : pValue.toFixed(4)} ≥ α = ${alphaT2}`;
+
+  updateComparison();
+}
+
+function updateComparison() {
+  const tb = $("comparison_body");
+  const rows = [];
+
+  // f1/f2
+  const f1v = $("f1_value").textContent;
+  const f2v = $("f2_value").textContent;
+  const f1Num = parseFloat(f1v), f2Num = parseFloat(f2v);
+  const f1ok = !isNaN(f1Num) && f1Num <= 15;
+  const f2ok = !isNaN(f2Num) && f2Num >= 50 && f2Num <= 100;
+  rows.push({ name: "f1 (Moore-Flanner)", stat: f1v, crit: "0 ≤ f1 ≤ 15", res: f1v, ok: f1ok, applies: !isNaN(f1Num) });
+  rows.push({ name: "f2 (Moore-Flanner)", stat: f2v, crit: "50 ≤ f2 ≤ 100", res: f2v, ok: f2ok, applies: !isNaN(f2Num) });
+
+  if (state.bca) {
+    const b = state.bca;
+    const ok = b.lcl >= 50;
+    rows.push({
+      name: "BCa Bootstrap f2",
+      stat: `f2̂ = ${b.f2Hat.toFixed(2)}, LCL = ${b.lcl.toFixed(2)}`,
+      crit: `LCL(${(100*(1-b.alpha)).toFixed(0)}%) ≥ 50`,
+      res: b.lcl.toFixed(2),
+      ok, applies: true
+    });
+  } else rows.push({ name: "BCa Bootstrap f2", stat: "—", crit: `LCL ≥ 50`, res: "Pendiente", ok: null, applies: false });
+
+  if (state.msd) {
+    const m = state.msd;
+    const ok = m.DM_ucl <= m.DMmax;
+    rows.push({
+      name: `MSD (Mahalanobis, δ=${m.delta}%)`,
+      stat: `D_M = ${m.DM.toFixed(3)}, UCL = ${m.DM_ucl.toFixed(3)}`,
+      crit: `UCL D_M ≤ ${m.DMmax.toFixed(3)}`,
+      res: m.DM_ucl.toFixed(3),
+      ok, applies: true
+    });
+  } else rows.push({ name: "MSD (Mahalanobis)", stat: "—", crit: "UCL ≤ D_M,máx", res: "Datos insuf.", ok: null, applies: false });
+
+  if (state.t2eq) {
+    const t = state.t2eq;
+    const ok = t.p < t.alpha;
+    rows.push({
+      name: `T2EQ (Hoffelder, δ=${t.delta}%)`,
+      stat: `F = ${t.F.toFixed(3)}, λ = ${t.lambda.toFixed(2)}`,
+      crit: `p < ${t.alpha}`,
+      res: `p = ${t.p < 1e-4 ? t.p.toExponential(2) : t.p.toFixed(4)}`,
+      ok, applies: true
+    });
+  } else rows.push({ name: "T2EQ (Hoffelder)", stat: "—", crit: "p < α", res: "Datos insuf.", ok: null, applies: false });
+
+  tb.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.stat}</td>
+      <td class="center">${r.crit}</td>
+      <td class="center">${r.res}</td>
+      <td class="center ${r.applies ? (r.ok ? "ok" : "bad") : ""}">${r.applies ? (r.ok ? "SÍ" : "NO") : "—"}</td>
+    </tr>
+  `).join("");
+}
 
 function $(id){ return document.getElementById(id); }
 
@@ -657,6 +1364,8 @@ function recalcAll(){
   $("calc_detail").textContent = det;
 
   drawChart(refStats, testStats);
+  try { computeMsdT2eq(); } catch (e) { console.error(e); }
+  updateComparison();
 }
 
 function drawChart(refStats, testStats){
@@ -874,6 +1583,10 @@ function exportCSV(){
 
 $("cfg_n").addEventListener("input", () => { state.n = parseInt($("cfg_n").value) || 0; recalcAll(); });
 $("cfg_Q").addEventListener("input", () => { state.Q = parseFloat($("cfg_Q").value) || 85; recalcAll(); });
+["cfg_delta_msd","cfg_msd_alpha","cfg_delta_t2eq","cfg_t2eq_alpha"].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener("input", () => { try { computeMsdT2eq(); } catch(e) { console.error(e); } });
+});
 
 window.addEventListener("resize", () => drawChart(computeStats("ref"), computeStats("test")));
 
