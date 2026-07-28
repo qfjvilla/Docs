@@ -1,8 +1,30 @@
 <!DOCTYPE html>
+<!--
+  ============================================================================
+  PROPIEDAD INTELECTUAL — © jvilla 2026. TODOS LOS DERECHOS RESERVADOS.
+  ============================================================================
+  Autor / Author: jvilla
+  Software: Calculador de Perfiles de Disolución (f1, f2, BCa Bootstrap,
+            MSD/Mahalanobis, T2EQ).
+  Copyright (c) 2026 jvilla. Este programa, su código fuente, algoritmos,
+  interfaz y documentación son propiedad intelectual exclusiva de jvilla.
+  Queda prohibida su reproducción, distribución, modificación, ingeniería
+  inversa, cesión o comercialización — total o parcial — sin autorización
+  expresa y por escrito del autor. Cualquier uso no autorizado constituye
+  una infracción a los derechos de autor conforme a las leyes vigentes.
+  Marca de autoría verificable: jvilla-signature-2026-f1f2-dissolution.
+  ============================================================================
+-->
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'; frame-ancestors 'none';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="jvilla">
+<meta name="copyright" content="Copyright (c) 2026 jvilla. Todos los derechos reservados. Propiedad intelectual de jvilla.">
+<meta name="description" content="Calculador de perfiles de disolución (f1, f2, BCa, MSD, T2EQ) — Propiedad intelectual de jvilla, 2026.">
 <title>Calculador f1 / f2 - Perfiles de Disolución</title>
 <style>
   :root {
@@ -221,14 +243,32 @@
     .medium-tabs, .nav-bar, section.card:not(.report-card) { display: none !important; }
     .report-view { border: none; padding: 0; }
   }
+  .copyright-marker {
+    position: absolute; left: -9999px; width: 1px; height: 1px;
+    overflow: hidden; white-space: nowrap; opacity: 0; pointer-events: none;
+  }
 </style>
 </head>
 <body>
+<!--
+  jvilla — PROPIEDAD INTELECTUAL. Copyright (c) 2026 jvilla. Todos los derechos
+  reservados. Este software y su código son propiedad exclusiva de jvilla.
+  jvilla-signature-2026-f1f2-dissolution
+-->
+<div class="copyright-marker" aria-hidden="true" data-owner="jvilla">
+  PROPIEDAD INTELECTUAL — Este software (Calculador de Perfiles de Disolución
+  f1/f2, BCa Bootstrap, MSD y T2EQ) es propiedad intelectual exclusiva de
+  jvilla — Copyright (c) 2026 jvilla — Todos los derechos reservados.
+  Cualquier reproducción, distribución, modificación, ingeniería inversa
+  o comercialización sin autorización expresa y por escrito del autor
+  constituye una infracción a los derechos de autor. Firma de autoría:
+  jvilla-signature-2026-f1f2-dissolution.
+</div>
 <header>
   <h1>Calculador f<sub>1</sub> / f<sub>2</sub> — Perfiles de Disolución</h1>
   <p>Comparación de perfiles según guías FDA / EMA / ICH Q1E. Aplicación 100 % local — no requiere instalación ni conexión a internet.</p>
   <div class="nav-bar">
-    <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias (IEEE) ↗</a>
+    <a href="metodologia.html" target="_blank" rel="noopener noreferrer">Metodología, fórmulas y referencias (IEEE) ↗</a>
   </div>
 </header>
 
@@ -542,15 +582,31 @@
 </section>
 
 <p class="footer">
-  Software de código abierto para uso académico y profesional. Fórmulas conforme a
-  FDA Guidance for Industry (Dissolution Testing of Immediate Release Solid Oral Dosage Forms, 1997)
-  y EMA Guideline on the Investigation of Bioequivalence (CPMP/EWP/QWP/1401/98 Rev.1).
+  Software conforme a FDA (Dissolution Testing of Immediate Release Solid Oral Dosage Forms, 1997)
+  y EMA (Guideline on the Investigation of Bioequivalence, CPMP/EWP/QWP/1401/98 Rev.1).<br>
+  <b>&copy; 2026 jvilla — Propiedad intelectual. Todos los derechos reservados.</b><br>
+  <span style="font-size: 10px;">Autor: jvilla · Firma de autoría: jvilla-signature-2026-f1f2-dissolution</span>
 </p>
 
 </main>
 
 <script>
 "use strict";
+
+// =============================================================================
+// PROPIEDAD INTELECTUAL — Copyright (c) 2026 jvilla. Todos los derechos reservados.
+// Autor: jvilla. Firma de autoría: jvilla-signature-2026-f1f2-dissolution.
+// Este código es propiedad exclusiva de jvilla y está protegido por las leyes
+// de derechos de autor. Prohibida su reproducción o distribución sin autorización
+// expresa y por escrito del autor.
+// =============================================================================
+const __COPYRIGHT_JVILLA__ = "PROPIEDAD INTELECTUAL — Calculador de Perfiles de Disolución (f1, f2, BCa, MSD, T2EQ). Copyright (c) 2026 jvilla. Todos los derechos reservados. Autor: jvilla. Firma de autoría: jvilla-signature-2026-f1f2-dissolution.";
+try {
+  console.log("%c" + __COPYRIGHT_JVILLA__,
+    "color:#0b5cad; background:#eef2f7; padding:6px 10px; border-left:4px solid #b8360a; font-weight:bold; font-size:12px;");
+  console.log("%cjvilla — Buscar 'jvilla' en el código fuente (Ctrl+F en el panel Elements o Sources) para verificar la autoría.",
+    "color:#5b6673; font-size:11px;");
+} catch (e) { /* console not available */ }
 
 const state = {
   vessels: 12,
@@ -658,6 +714,8 @@ function renderMediumTabs() {
 }
 
 function switchMedium(idx) {
+  idx = parseInt(idx);
+  if (!Number.isInteger(idx) || idx < 0 || idx >= state.numMedia) return;
   if (idx === state.activeIdx) return;
   saveActiveMedium();
   loadActiveMedium(idx);
@@ -1134,32 +1192,37 @@ function computeMsdT2eq() {
   const df2 = nR + nT - p - 1;
   // F critical (invert central F CDF) — for MSD upper CL
   function invF(prob, df1, df2) {
-    // Bisection on F CDF: I(df1*f/(df2+df1*f); df1/2, df2/2)
-    let lo = 0.0001, hi = 1000;
-    for (let it = 0; it < 100; it++) {
+    prob = Math.min(1 - 1e-9, Math.max(1e-9, prob));
+    let lo = 1e-6, hi = 1e6;
+    for (let it = 0; it < 200; it++) {
       const mid = (lo + hi) / 2;
       const y = df1 * mid / (df2 + df1 * mid);
       const cdf = betai(df1 / 2, df2 / 2, y);
       if (cdf < prob) lo = mid; else hi = mid;
-      if (hi - lo < 1e-6) break;
+      if (hi - lo < 1e-6 * Math.max(1, mid)) break;
     }
     return (lo + hi) / 2;
   }
   const Fcrit_msd = invF(1 - alphaMsd, df1, df2);
   // Upper CI for MD^2 by inversion of non-central F (bisection)
   function upperMDsq(prob) {
-    // Find ncp such that ncFCdf(F_obs_center, df1, df2, ncp) = prob (using F_obs = MDsq*K)
     const K = (nR + nT - p - 1) / ((nR + nT - 2) * p);
     const F_obs = K * T2;
+    // Bracket search: expand hi until ncFCdf drops below prob
     let lo = 0, hi = Math.max(1, T2 * 4 + 100);
-    for (let it = 0; it < 80; it++) {
+    for (let expand = 0; expand < 50; expand++) {
+      if (ncFCdf(F_obs, df1, df2, hi) <= prob) break;
+      hi *= 2;
+      if (hi > 1e12) break;
+    }
+    for (let it = 0; it < 120; it++) {
       const mid = (lo + hi) / 2;
       const cdf = ncFCdf(F_obs, df1, df2, mid);
       if (cdf > prob) lo = mid; else hi = mid;
-      if (hi - lo < 1e-4) break;
+      if (hi - lo < 1e-6 * Math.max(1, mid)) break;
     }
     const ncp = (lo + hi) / 2;
-    return ncp / nPool; // MDsq_upper = ncp / nPool
+    return ncp / nPool;
   }
   const MDsq_ucl = upperMDsq(alphaMsd);
   const DM_ucl = Math.sqrt(Math.max(0, MDsq_ucl));
@@ -1356,13 +1419,18 @@ function renderTable(tableId, which){
   </tfoot>`;
   table.innerHTML = html;
 
-  // Event bindings
+  // Event bindings — with defensive validation to prevent prototype pollution
   table.querySelectorAll("input[data-t]").forEach(inp => {
     inp.addEventListener("input", e => {
       const t = +e.target.dataset.t;
       const v = +e.target.dataset.v;
       const w = e.target.dataset.which;
-      const val = e.target.value === "" ? null : parseFloat(e.target.value);
+      // Whitelist w; validate indices are integers within bounds
+      if (w !== "ref" && w !== "test") return;
+      if (!Number.isInteger(t) || t < 0 || t >= state.times) return;
+      if (!Number.isInteger(v) || v < 0 || v >= state.vessels) return;
+      let val = e.target.value === "" ? null : parseFloat(e.target.value);
+      if (val != null && (!isFinite(val) || val < 0 || val > 200)) val = null;
       state[w][t][v] = (val == null || isNaN(val)) ? null : val;
       recalcAll();
     });
@@ -1783,42 +1851,53 @@ function clearAllData(){
   recalcAll();
 }
 
+// CSV injection defense: quote every field and neutralize any leading
+// character that spreadsheet apps (Excel, Sheets, LibreOffice) treat as
+// a formula trigger: '=', '+', '-', '@', TAB (0x09), CR (0x0D).
+function csvCell(v) {
+  let s = v == null ? "" : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function csvRow(arr) { return arr.map(csvCell).join(","); }
+
 function exportCSV(){
   const lines = [];
-  lines.push("Calculador f1/f2 - Perfiles de Disolución");
+  lines.push(csvRow(["Calculador f1/f2 - Perfiles de Disolución"]));
+  lines.push(csvRow(["PROPIEDAD INTELECTUAL - Copyright (c) 2026 jvilla. Todos los derechos reservados."]));
   lines.push("");
-  lines.push("Producto de Referencia (R)");
-  lines.push(`Nombre,${$("ref_name").value}`);
-  lines.push(`Lote,${$("ref_lot").value}`);
-  lines.push(`Fecha fabricación,${$("ref_date").value}`);
-  lines.push(`Fabricante,${$("ref_manuf").value}`);
+  lines.push(csvRow(["Producto de Referencia (R)"]));
+  lines.push(csvRow(["Nombre", $("ref_name").value]));
+  lines.push(csvRow(["Lote", $("ref_lot").value]));
+  lines.push(csvRow(["Fecha fabricación", $("ref_date").value]));
+  lines.push(csvRow(["Fabricante", $("ref_manuf").value]));
   lines.push("");
-  lines.push("Producto de Prueba (T)");
-  lines.push(`Nombre,${$("test_name").value}`);
-  lines.push(`Lote,${$("test_lot").value}`);
-  lines.push(`Fecha fabricación,${$("test_date").value}`);
-  lines.push(`Fabricante,${$("test_manuf").value}`);
+  lines.push(csvRow(["Producto de Prueba (T)"]));
+  lines.push(csvRow(["Nombre", $("test_name").value]));
+  lines.push(csvRow(["Lote", $("test_lot").value]));
+  lines.push(csvRow(["Fecha fabricación", $("test_date").value]));
+  lines.push(csvRow(["Fabricante", $("test_manuf").value]));
   lines.push("");
 
   ["ref","test"].forEach(which => {
-    lines.push(`Datos ${which === "ref" ? "Referencia" : "Prueba"} (%)`);
-    lines.push(["Vaso", ...state.timePoints.map(t => `t=${t} min`)].join(","));
+    lines.push(csvRow([`Datos ${which === "ref" ? "Referencia" : "Prueba"} (%)`]));
+    lines.push(csvRow(["Vaso", ...state.timePoints.map(t => `t=${t} min`)]));
     for (let j = 0; j < state.vessels; j++){
-      lines.push([j+1, ...state[which].map(row => row[j] ?? "")].join(","));
+      lines.push(csvRow([j+1, ...state[which].map(row => row[j] ?? "")]));
     }
     lines.push("");
   });
 
   const refStats = computeStats("ref"), testStats = computeStats("test");
-  lines.push("Tiempo,R media,R DE,R CV%,T media,T DE,T CV%");
+  lines.push(csvRow(["Tiempo","R media","R DE","R CV%","T media","T DE","T CV%"]));
   for (let i = 0; i < state.times; i++){
-    lines.push([state.timePoints[i], fmt(refStats[i].mean), fmt(refStats[i].sd), fmt(refStats[i].cv),
-                fmt(testStats[i].mean), fmt(testStats[i].sd), fmt(testStats[i].cv)].join(","));
+    lines.push(csvRow([state.timePoints[i], fmt(refStats[i].mean), fmt(refStats[i].sd), fmt(refStats[i].cv),
+                       fmt(testStats[i].mean), fmt(testStats[i].sd), fmt(testStats[i].cv)]));
   }
   lines.push("");
-  lines.push(`n usado,${state.n}`);
-  lines.push(`f1,${$("f1_value").textContent}`);
-  lines.push(`f2,${$("f2_value").textContent}`);
+  lines.push(csvRow(["n usado", state.n]));
+  lines.push(csvRow(["f1", $("f1_value").textContent]));
+  lines.push(csvRow(["f2", $("f2_value").textContent]));
 
   const csv = lines.join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1931,8 +2010,8 @@ function generateReport() {
   html += `<div class="doc-header">
     <h1>Reporte de Comparación de Perfiles de Disolución</h1>
     <div class="doc-meta">
-      <b>${inst}</b> · Código del estudio: <b>${code}</b> · Fecha: <b>${repDate}</b><br>
-      Analista responsable: <b>${analyst}</b>
+      <b>${escapeHtml(inst)}</b> · Código del estudio: <b>${escapeHtml(code)}</b> · Fecha: <b>${escapeHtml(repDate)}</b><br>
+      Analista responsable: <b>${escapeHtml(analyst)}</b>
     </div>
   </div>`;
 
@@ -1973,7 +2052,7 @@ function generateReport() {
     <li><b>T<sup>2</sup>EQ</b> (Hoffelder 2018–2019; EMA 2018) [6][9]: prueba multivariada de equivalencia recomendada para perfiles altamente variables.</li>
   </ul>
   <p>Restricciones aplicadas: ≥ 12 unidades por producto; ≥ 3 tiempos válidos; CV ≤ 20 % en el primer punto y CV ≤ 10 % en los puntos posteriores; sólo un tiempo posterior a alcanzar Q = ${state.Q} %.
-  Para el detalle de fórmulas y explicaciones consulte el documento anexo <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias</a>.</p>`;
+  Para el detalle de fórmulas y explicaciones consulte el documento anexo <a href="metodologia.html" target="_blank" rel="noopener noreferrer">Metodología, fórmulas y referencias</a>.</p>`;
 
   html += `<h2>5. Resultados</h2>`;
 
@@ -2069,7 +2148,7 @@ function generateReport() {
 
   html += `<h2>7. Referencias</h2>
   <p style="font-size: 12px;">Las referencias completas en formato IEEE se detallan en el documento anexo
-  <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias (IEEE)</a>. Referencias principales citadas:</p>
+  <a href="metodologia.html" target="_blank" rel="noopener noreferrer">Metodología, fórmulas y referencias (IEEE)</a>. Referencias principales citadas:</p>
   <ol style="font-size: 12px;">
     <li>B. Efron, "Better bootstrap confidence intervals," <i>J. Am. Stat. Assoc.</i>, vol. 82, no. 397, pp. 171–185, 1987.</li>
     <li>B. Efron and R. J. Tibshirani, <i>An Introduction to the Bootstrap</i>. New York, NY, USA: Chapman &amp; Hall, 1993.</li>
@@ -2084,8 +2163,10 @@ function generateReport() {
   </ol>`;
 
   html += `<p style="margin-top: 25px; font-size: 10.5px; color: #666; text-align: center; border-top: 1px solid #999; padding-top: 10px;">
-    Reporte generado electrónicamente por el Calculador f<sub>1</sub>/f<sub>2</sub> — Perfiles de Disolución.
-    Fecha de generación: ${new Date().toLocaleString()}. Firma del responsable: ______________________________
+    Reporte generado electrónicamente por el Calculador f<sub>1</sub>/f<sub>2</sub> — Perfiles de Disolución.<br>
+    Fecha de generación: ${escapeHtml(new Date().toLocaleString())}. Firma del responsable: ______________________________<br>
+    <b>Propiedad intelectual del software: &copy; 2026 jvilla — Todos los derechos reservados.</b>
+    <span style="font-size: 9.5px;">jvilla-signature-2026-f1f2-dissolution</span>
   </p>`;
 
   const out = $("report_output");
@@ -2164,16 +2245,41 @@ function ensureReportGenerated() {
 function printReport() {
   ensureReportGenerated();
   const body = $("report_output").innerHTML;
-  const win = window.open("", "_blank", "width=1000,height=800");
+  const win = window.open("", "_blank", "width=1000,height=800,noopener,noreferrer");
   if (!win) { alert("Habilite las ventanas emergentes para imprimir el reporte."); return; }
   win.document.open();
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><style>${getReportStyles()}</style></head><body>${body}<script>window.onload=function(){setTimeout(function(){window.print();},300);};</` + `script></body></html>`);
+  win.document.write(
+    `<!DOCTYPE html><html><head><meta charset="utf-8">` +
+    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:;">` +
+    `<meta name="author" content="jvilla">` +
+    `<meta name="copyright" content="Copyright (c) 2026 jvilla. Todos los derechos reservados.">` +
+    `<title>Reporte de Perfiles de Disolución — jvilla</title>` +
+    `<style>${getReportStyles()}</style></head><body>` +
+    `<!-- jvilla — Propiedad Intelectual. Copyright (c) 2026 jvilla. jvilla-signature-2026-f1f2-dissolution -->` +
+    body +
+    `<script>window.onload=function(){setTimeout(function(){window.print();},300);};</` + `script>` +
+    `</body></html>`
+  );
   win.document.close();
+}
+function _reportOwnershipFooter() {
+  return `<div style="border-top:1px solid #999; margin-top:20px; padding-top:8px; font-size:10px; color:#777; text-align:center;">
+    Reporte generado por el Calculador de Perfiles de Disolución.
+    Propiedad intelectual del software: &copy; 2026 jvilla — Todos los derechos reservados.
+    jvilla-signature-2026-f1f2-dissolution
+  </div>`;
 }
 function exportReportAsHtml() {
   ensureReportGenerated();
-  const body = $("report_output").innerHTML;
-  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><style>${getReportStyles()}</style></head><body>${body}</body></html>`;
+  const body = $("report_output").innerHTML + _reportOwnershipFooter();
+  const html = `<!DOCTYPE html>
+<!-- Copyright (c) 2026 jvilla. jvilla-signature-2026-f1f2-dissolution -->
+<html lang="es"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:;">
+<meta name="author" content="jvilla">
+<meta name="copyright" content="Copyright (c) 2026 jvilla. Todos los derechos reservados.">
+<title>Reporte de Perfiles de Disolución — jvilla</title>
+<style>${getReportStyles()}</style></head><body>${body}</body></html>`;
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -2183,8 +2289,15 @@ function exportReportAsHtml() {
 }
 function exportReportAsWord() {
   ensureReportGenerated();
-  const body = $("report_output").innerHTML;
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--><style>${getReportStyles()}</style></head><body>${body}</body></html>`;
+  const body = $("report_output").innerHTML + _reportOwnershipFooter();
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<!-- Copyright (c) 2026 jvilla. jvilla-signature-2026-f1f2-dissolution -->
+<head><meta charset="utf-8">
+<meta name="author" content="jvilla">
+<meta name="copyright" content="Copyright (c) 2026 jvilla. Todos los derechos reservados.">
+<title>Reporte de Perfiles de Disolución — jvilla</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>${getReportStyles()}</style></head><body>${body}</body></html>`;
   const blob = new Blob(["﻿", html], { type: "application/msword" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
