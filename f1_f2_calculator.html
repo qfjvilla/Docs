@@ -191,12 +191,45 @@
   .comparison-table td.center { text-align: center; }
   .comparison-table td.ok { background: #eaf7f0; color: #0e6a48; font-weight: 600; }
   .comparison-table td.bad { background: #fbe8dd; color: #9c2f08; font-weight: 600; }
+  .nav-bar { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+  .nav-bar a { color: #fff; background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 5px; text-decoration: none; font-size: 12.5px; border: 1px solid rgba(255,255,255,0.3); }
+  .nav-bar a:hover { background: rgba(255,255,255,0.28); }
+  .medium-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
+  .medium-tab { padding: 8px 14px; background: #eef2f7; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: -2px; }
+  .medium-tab:hover { background: #dde5ef; color: var(--text); }
+  .medium-tab.active { background: #fff; color: var(--primary); font-weight: 700; border-bottom: 2px solid #fff; }
+  .medium-header { background: #f2f7fd; border: 1px solid #cadaee; border-radius: 6px; padding: 12px 14px; margin-bottom: 14px; }
+  .medium-header input { font-size: 14px; font-weight: 600; }
+  .report-view { background: #fff; padding: 30px 40px; border: 1px solid var(--border); border-radius: 8px; margin-top: 20px; font-family: "Times New Roman", Georgia, serif; color: #000; line-height: 1.55; }
+  .report-view h1, .report-view h2, .report-view h3 { font-family: -apple-system, "Segoe UI", sans-serif; color: #0b3860; }
+  .report-view h1 { font-size: 22px; border-bottom: 2px solid #0b3860; padding-bottom: 6px; margin: 0 0 6px; }
+  .report-view h2 { font-size: 17px; margin-top: 22px; border-left: 4px solid #0b3860; padding-left: 10px; }
+  .report-view h3 { font-size: 14px; margin-top: 14px; color: #0b5cad; }
+  .report-view table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .report-view th, .report-view td { border: 1px solid #888; padding: 4px 8px; }
+  .report-view th { background: #eef2f7; }
+  .report-view .doc-header { text-align: center; margin-bottom: 20px; }
+  .report-view .doc-meta { font-size: 11.5px; color: #555; text-align: center; }
+  .report-view .conclusion-box { border: 2px solid #0b3860; padding: 12px; border-radius: 4px; background: #f5f9fd; margin-top: 10px; }
+  .report-view .badge-ok { display: inline-block; padding: 2px 8px; background: #d6f0e2; color: #0e6a48; font-size: 11px; border-radius: 8px; font-weight: 700; }
+  .report-view .badge-bad { display: inline-block; padding: 2px 8px; background: #fadfd2; color: #9c2f08; font-size: 11px; border-radius: 8px; font-weight: 700; }
+  .report-view p { margin: 5px 0 8px; }
+  .medium-count-row { background: #fef8e6; border: 1px solid #f0d78a; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; }
+  .medium-count-row label { display: inline-block; font-weight: 600; color: #6b4a00; margin-right: 10px; margin-top: 0; }
+  .medium-count-row input { width: 60px; display: inline-block; }
+  @media print {
+    .medium-tabs, .nav-bar, section.card:not(.report-card) { display: none !important; }
+    .report-view { border: none; padding: 0; }
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>Calculador f<sub>1</sub> / f<sub>2</sub> — Perfiles de Disolución</h1>
   <p>Comparación de perfiles según guías FDA / EMA / ICH Q1E. Aplicación 100 % local — no requiere instalación ni conexión a internet.</p>
+  <div class="nav-bar">
+    <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias (IEEE) ↗</a>
+  </div>
 </header>
 
 <main>
@@ -244,6 +277,15 @@
 
 <section class="card">
   <h2>2. Configuración del ensayo</h2>
+
+  <div class="medium-count-row">
+    <label for="cfg_num_media">¿Cuántos medios de disolución desea evaluar? (1–5)</label>
+    <input type="number" id="cfg_num_media" value="1" min="1" max="5" step="1">
+    <span style="font-size: 12px; color: #6b4a00; margin-left: 10px;">
+      Se generará una pestaña por cada medio para ingresar los perfiles de R y T.
+    </span>
+  </div>
+
   <div class="controls-row">
     <div class="field">
       <label>Nº de vasos (unidades)</label>
@@ -270,12 +312,32 @@
 </section>
 
 <section class="card">
-  <h2>3. Datos de disolución — Referencia (R)</h2>
+  <h2>3. Medio de disolución y datos de perfiles</h2>
+
+  <div class="medium-tabs" id="medium_tabs"></div>
+
+  <div class="medium-header">
+    <label style="margin-top:0;">Medio de disolución en el que se realizó el ensayo</label>
+    <input type="text" id="medium_name" placeholder="p. ej. HCl 0.1 N pH 1.2 / Buffer fosfato pH 6.8 / Buffer acetato pH 4.5 / Agua desmineralizada">
+    <div class="row2" style="margin-top: 8px;">
+      <div>
+        <label>Volumen del medio (mL)</label>
+        <input type="text" id="medium_vol" placeholder="p. ej. 900 mL">
+      </div>
+      <div>
+        <label>Aparato USP y velocidad</label>
+        <input type="text" id="medium_apparatus" placeholder="p. ej. Aparato II (paletas), 50 rpm">
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 14px; color: var(--ref); margin: 14px 0 6px;">Datos — Producto de Referencia (R)</h3>
   <div class="tables-wrap"><table class="data" id="table_ref"></table></div>
 </section>
 
 <section class="card">
-  <h2>4. Datos de disolución — Prueba (T)</h2>
+  <h2>4. Datos — Producto de Prueba (T)</h2>
+  <p style="font-size:12px; color: var(--muted); margin: 0 0 8px;">(Los datos ingresados aplican al medio seleccionado en la pestaña activa arriba.)</p>
   <div class="tables-wrap"><table class="data" id="table_test"></table></div>
 </section>
 
@@ -418,9 +480,42 @@
   </div>
 </section>
 
+<section class="card">
+  <h2>9. Reporte estructurado del estudio</h2>
+  <p style="font-size: 12.5px; color: var(--muted); margin: 0 0 10px;">
+    Complete la información del estudio y genere un reporte con objetivos, alcance, metodología, resultados por medio y conclusiones globales.
+    El reporte podrá imprimirse o guardarse en PDF.
+  </p>
+
+  <div class="row2">
+    <div>
+      <label>Analista / Responsable</label>
+      <input type="text" id="rep_analyst" placeholder="Nombre del profesional responsable">
+    </div>
+    <div>
+      <label>Fecha del reporte</label>
+      <input type="date" id="rep_date">
+    </div>
+  </div>
+  <label>Institución / Laboratorio</label>
+  <input type="text" id="rep_institution" placeholder="p. ej. Laboratorio de Control de Calidad, Universidad XYZ">
+  <label>Código / Referencia interna del estudio</label>
+  <input type="text" id="rep_code" placeholder="p. ej. EST-DISO-2025-001">
+  <label>Objetivo específico del estudio (opcional — se completará automáticamente si se deja vacío)</label>
+  <input type="text" id="rep_objective" placeholder="p. ej. Demostrar la similitud de perfiles con miras a un bioexención BCS clase I">
+
+  <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+    <button onclick="generateReport()">Generar reporte</button>
+    <button class="secondary" onclick="printReport()">Imprimir reporte / PDF</button>
+    <button class="secondary" onclick="document.getElementById('report_output').style.display='none'">Ocultar reporte</button>
+  </div>
+
+  <div id="report_output" class="report-view report-card" style="display: none;"></div>
+</section>
+
 <section class="card no-print">
-  <h2>9. Exportar / Imprimir</h2>
-  <button onclick="window.print()">Imprimir / Guardar como PDF</button>
+  <h2>10. Exportar / Imprimir</h2>
+  <button onclick="window.print()">Imprimir toda la página</button>
   <button class="secondary" onclick="exportCSV()">Exportar datos a CSV</button>
 </section>
 
@@ -445,8 +540,125 @@ const state = {
   test: [],
   bca: null,
   msd: null,
-  t2eq: null
+  t2eq: null,
+  numMedia: 1,
+  activeIdx: 0,
+  media: []
 };
+
+function newMedium(name = "") {
+  return {
+    name,
+    volume: "",
+    apparatus: "",
+    timePoints: initTimeDefaults(state.times),
+    ref: initMatrix(state.times, state.vessels),
+    test: initMatrix(state.times, state.vessels),
+    n: 0,
+    bca: null,
+    msd: null,
+    t2eq: null,
+    lastCompare: null
+  };
+}
+
+function syncActiveMediumFromLive() {
+  // Syncs only DATA arrays and derived stats — identity fields (name/volume/apparatus)
+  // are updated via their own input handlers to avoid init-order races.
+  const m = state.media[state.activeIdx];
+  if (!m) return;
+  m.timePoints = state.timePoints;
+  m.ref = state.ref;
+  m.test = state.test;
+  m.n = state.n;
+  m.bca = state.bca;
+  m.msd = state.msd;
+  m.t2eq = state.t2eq;
+}
+function saveActiveMedium() {
+  const m = state.media[state.activeIdx];
+  if (!m) return;
+  if ($("medium_name")) m.name = $("medium_name").value || m.name;
+  if ($("medium_vol")) m.volume = $("medium_vol").value;
+  if ($("medium_apparatus")) m.apparatus = $("medium_apparatus").value;
+  syncActiveMediumFromLive();
+}
+
+function loadActiveMedium(idx) {
+  const m = state.media[idx];
+  if (!m) return;
+  state.activeIdx = idx;
+  if ($("medium_name")) $("medium_name").value = m.name || "";
+  if ($("medium_vol")) $("medium_vol").value = m.volume || "";
+  if ($("medium_apparatus")) $("medium_apparatus").value = m.apparatus || "";
+  state.timePoints = m.timePoints;
+  state.ref = m.ref;
+  state.test = m.test;
+  state.n = m.n;
+  state.bca = m.bca;
+  state.msd = m.msd;
+  state.t2eq = m.t2eq;
+  if ($("cfg_n")) $("cfg_n").value = state.n;
+  renderMediumTabs();
+  renderTable("table_ref", "ref");
+  renderTable("table_test", "test");
+  recalcAll();
+}
+
+function rebuildMedia() {
+  const n = Math.max(1, Math.min(5, parseInt($("cfg_num_media").value) || 1));
+  state.numMedia = n;
+  // preserve existing media where possible
+  while (state.media.length < n) {
+    const defaults = ["HCl 0.1 N pH 1.2", "Buffer acetato pH 4.5", "Buffer fosfato pH 6.8", "Agua desmineralizada", "Buffer adicional"];
+    state.media.push(newMedium(defaults[state.media.length] || ""));
+  }
+  if (state.media.length > n) state.media.length = n;
+  if (state.activeIdx >= n) state.activeIdx = 0;
+  renderMediumTabs();
+}
+
+function renderMediumTabs() {
+  const c = $("medium_tabs");
+  if (!c) return;
+  c.innerHTML = "";
+  if (state.numMedia <= 1) { c.style.display = "none"; return; }
+  c.style.display = "flex";
+  for (let i = 0; i < state.numMedia; i++) {
+    const b = document.createElement("div");
+    b.className = "medium-tab" + (i === state.activeIdx ? " active" : "");
+    const nm = state.media[i] && state.media[i].name ? state.media[i].name : `Medio ${i+1}`;
+    b.textContent = `${i+1}. ${nm.length > 28 ? nm.slice(0,26)+"…" : nm}`;
+    b.title = nm;
+    b.onclick = () => switchMedium(i);
+    c.appendChild(b);
+  }
+}
+
+function switchMedium(idx) {
+  if (idx === state.activeIdx) return;
+  saveActiveMedium();
+  loadActiveMedium(idx);
+}
+
+function collectCurrentSummary() {
+  const refStats = computeStats("ref");
+  const testStats = computeStats("test");
+  const refMeans = refStats.map(s => s.mean);
+  const testMeans = testStats.map(s => s.mean);
+  return {
+    times: state.timePoints.slice(),
+    refMeans, testMeans,
+    refCVs: refStats.map(s => s.cv),
+    testCVs: testStats.map(s => s.cv),
+    f1: parseFloat($("f1_value").textContent),
+    f2: parseFloat($("f2_value").textContent),
+    n: state.n,
+    bca: state.bca,
+    msd: state.msd,
+    t2eq: state.t2eq
+  };
+}
 
 // ---------- Numerical helpers ----------
 function lgamma(x) {
@@ -793,6 +1005,7 @@ function finishBootstrap(boot, f2Hat, alpha, nR, nT, refCols, testCols, T) {
 
   drawBcaHistogram(sorted, f2Hat, lcl, ucl);
   updateComparison();
+  syncActiveMediumFromLive();
 }
 function drawBcaHistogram(sorted, f2Hat, lcl, ucl) {
   const cvs = $("bca_hist");
@@ -1053,22 +1266,38 @@ function rebuildTables(){
   const v = Math.max(3, parseInt($("cfg_vessels").value) || 12);
   const t = Math.max(2, parseInt($("cfg_times").value) || 5);
   state.Q = parseFloat($("cfg_Q").value) || 85;
-
-  // preserve existing data where possible
-  const oldRef = state.ref, oldTest = state.test;
-  const oldTimes = state.timePoints;
-
   state.vessels = v;
   state.times = t;
-  state.timePoints = initTimeDefaults(t).map((val, i) => (oldTimes && oldTimes[i] != null) ? oldTimes[i] : val);
-  state.ref = initMatrix(t, v);
-  state.test = initMatrix(t, v);
 
-  for (let i = 0; i < t; i++){
-    for (let j = 0; j < v; j++){
-      if (oldRef[i] && oldRef[i][j] != null) state.ref[i][j] = oldRef[i][j];
-      if (oldTest[i] && oldTest[i][j] != null) state.test[i][j] = oldTest[i][j];
+  // update ALL media: preserve overlap
+  const baseTimes = initTimeDefaults(t);
+  (state.media.length ? state.media : [null]).forEach((m, mi) => {
+    const isActive = (m == null) || (mi === state.activeIdx);
+    const src = m || { timePoints: state.timePoints, ref: state.ref, test: state.test };
+    const oldRef = src.ref || [], oldTest = src.test || [], oldTimes = src.timePoints || [];
+    const newTimes = baseTimes.map((val, i) => oldTimes[i] != null ? oldTimes[i] : val);
+    const newRef = initMatrix(t, v);
+    const newTest = initMatrix(t, v);
+    for (let i = 0; i < t; i++) {
+      for (let j = 0; j < v; j++) {
+        if (oldRef[i] && oldRef[i][j] != null) newRef[i][j] = oldRef[i][j];
+        if (oldTest[i] && oldTest[i][j] != null) newTest[i][j] = oldTest[i][j];
+      }
     }
+    if (m) { m.timePoints = newTimes; m.ref = newRef; m.test = newTest; }
+    else {
+      state.timePoints = newTimes;
+      state.ref = newRef;
+      state.test = newTest;
+    }
+  });
+
+  // re-alias live state from active medium
+  const active = state.media[state.activeIdx];
+  if (active) {
+    state.timePoints = active.timePoints;
+    state.ref = active.ref;
+    state.test = active.test;
   }
 
   renderTable("table_ref", "ref");
@@ -1366,6 +1595,7 @@ function recalcAll(){
   drawChart(refStats, testStats);
   try { computeMsdT2eq(); } catch (e) { console.error(e); }
   updateComparison();
+  syncActiveMediumFromLive();
 }
 
 function drawChart(refStats, testStats){
@@ -1513,6 +1743,7 @@ function loadExample(){
   $("test_date").value = "2025-06-01";
   $("test_manuf").value = "Genéricos ABC S.A.S.";
 
+  syncActiveMediumFromLive();
   renderTable("table_ref","ref");
   renderTable("table_test","test");
   $("cfg_n").value = 0;
@@ -1523,6 +1754,7 @@ function clearAllData(){
   if (!confirm("¿Desea borrar todos los datos ingresados?")) return;
   state.ref = initMatrix(state.times, state.vessels);
   state.test = initMatrix(state.times, state.vessels);
+  syncActiveMediumFromLive();
   ["ref_name","ref_lot","ref_date","ref_manuf","test_name","test_lot","test_date","test_manuf"].forEach(id => $(id).value = "");
   renderTable("table_ref","ref");
   renderTable("table_test","test");
@@ -1587,11 +1819,221 @@ $("cfg_Q").addEventListener("input", () => { state.Q = parseFloat($("cfg_Q").val
   const el = $(id);
   if (el) el.addEventListener("input", () => { try { computeMsdT2eq(); } catch(e) { console.error(e); } });
 });
+$("cfg_num_media").addEventListener("input", () => { saveActiveMedium(); rebuildMedia(); renderMediumTabs(); });
+["medium_name","medium_vol","medium_apparatus"].forEach(id => {
+  $(id).addEventListener("input", () => {
+    const m = state.media[state.activeIdx];
+    if (m) {
+      m.name = $("medium_name").value;
+      m.volume = $("medium_vol").value;
+      m.apparatus = $("medium_apparatus").value;
+    }
+    renderMediumTabs();
+  });
+});
+if ($("rep_date") && !$("rep_date").value) $("rep_date").value = new Date().toISOString().slice(0,10);
+
+// ---------- Report generation ----------
+function fmtNum(x, d=2) {
+  if (x == null || isNaN(x)) return "—";
+  return Number(x).toFixed(d);
+}
+function verdictBadge(ok) {
+  return ok ? '<span class="badge-ok">SIMILARES</span>' : '<span class="badge-bad">NO SIMILARES</span>';
+}
+function generateReport() {
+  saveActiveMedium();
+  const refName = $("ref_name").value || "Producto de Referencia";
+  const testName = $("test_name").value || "Producto de Prueba";
+  const analyst = $("rep_analyst").value || "—";
+  const repDate = $("rep_date").value || new Date().toISOString().slice(0,10);
+  const inst = $("rep_institution").value || "—";
+  const code = $("rep_code").value || "—";
+  const userObj = $("rep_objective").value.trim();
+
+  const perMedium = state.media.slice(0, state.numMedia).map((m, i) => {
+    // regenerate summary for each medium by loading into live state
+    const oldIdx = state.activeIdx;
+    loadActiveMedium(i);
+    const summary = collectCurrentSummary();
+    return { m, summary, index: i };
+  });
+  loadActiveMedium(0); // restore
+
+  // Overall verdict
+  const perMediumF2ok = perMedium.map(({summary}) => !isNaN(summary.f2) && summary.f2 >= 50 && summary.f2 <= 100);
+  const allSimilar = perMediumF2ok.every(x => x);
+  const anySimilar = perMediumF2ok.some(x => x);
+
+  let html = "";
+  html += `<div class="doc-header">
+    <h1>Reporte de Comparación de Perfiles de Disolución</h1>
+    <div class="doc-meta">
+      <b>${inst}</b> · Código del estudio: <b>${code}</b> · Fecha: <b>${repDate}</b><br>
+      Analista responsable: <b>${analyst}</b>
+    </div>
+  </div>`;
+
+  html += `<h2>1. Objetivo</h2>`;
+  if (userObj) {
+    html += `<p>${escapeHtml(userObj)}</p>`;
+  } else {
+    html += `<p>Comparar los perfiles de disolución <i>in vitro</i> del producto de prueba <b>${escapeHtml(testName)}</b>
+    frente al producto de referencia <b>${escapeHtml(refName)}</b> en ${state.numMedia === 1 ? "el medio" : `los ${state.numMedia} medios`} de disolución
+    seleccionado${state.numMedia === 1 ? "" : "s"}, mediante el cálculo del factor de diferencia f<sub>1</sub>, el factor de similitud f<sub>2</sub>
+    y métodos estadísticos complementarios (BCa Bootstrap f<sub>2</sub>, distancia de Mahalanobis / ACLMD, y prueba T<sup>2</sup>EQ),
+    a fin de establecer la comparabilidad requerida por las guías FDA (1997), EMA (2010, 2018) e ICH.</p>`;
+  }
+
+  html += `<h2>2. Alcance</h2>
+  <p>El presente estudio evalúa la similitud de perfiles de disolución únicamente en las condiciones experimentales descritas.
+  Sus conclusiones aplican a los lotes específicos analizados y no reemplazan estudios de biodisponibilidad/bioequivalencia
+  cuando estos sean requeridos por la reglamentación. El estudio incluye ${state.numMedia} medio${state.numMedia===1?"":"s"} de disolución,
+  ${state.vessels} unidades (vasos) por producto y ${state.times} tiempos de muestreo por medio.</p>`;
+
+  html += `<h2>3. Información de los productos evaluados</h2>
+  <table>
+    <tr><th></th><th>Referencia (R)</th><th>Prueba (T)</th></tr>
+    <tr><th>Nombre</th><td>${escapeHtml(refName)}</td><td>${escapeHtml(testName)}</td></tr>
+    <tr><th>Fabricante</th><td>${escapeHtml($("ref_manuf").value||"—")}</td><td>${escapeHtml($("test_manuf").value||"—")}</td></tr>
+    <tr><th>Lote</th><td>${escapeHtml($("ref_lot").value||"—")}</td><td>${escapeHtml($("test_lot").value||"—")}</td></tr>
+    <tr><th>Fecha de fabricación</th><td>${escapeHtml($("ref_date").value||"—")}</td><td>${escapeHtml($("test_date").value||"—")}</td></tr>
+  </table>`;
+
+  html += `<h2>4. Metodología</h2>
+  <p>El ensayo de disolución se realizó siguiendo los procedimientos descritos en las guías FDA (1997) [4], EMA (2010) [8] e ICH Q1E.
+  Se determinó el porcentaje disuelto en cada vaso a cada tiempo de muestreo. Los cálculos se realizaron mediante las siguientes técnicas:</p>
+  <ul>
+    <li><b>f<sub>1</sub> — Factor de diferencia</b> (Moore &amp; Flanner, 1996) [3]: mide la diferencia porcentual media entre R y T.</li>
+    <li><b>f<sub>2</sub> — Factor de similitud</b> (Moore &amp; Flanner, 1996; FDA 1997) [3][4]: cuantifica la similitud logarítmica entre las curvas.</li>
+    <li><b>BCa Bootstrap f<sub>2</sub></b> (Efron 1987; Shah et al. 1998) [1][5]: intervalo de confianza corregido por sesgo y aceleración.</li>
+    <li><b>MSD — Distancia de Mahalanobis</b> (Tsong et al. 1996) [7]: distancia multivariada estandarizada entre perfiles.</li>
+    <li><b>T<sup>2</sup>EQ</b> (Hoffelder 2018–2019; EMA 2018) [6][9]: prueba multivariada de equivalencia recomendada para perfiles altamente variables.</li>
+  </ul>
+  <p>Restricciones aplicadas: ≥ 12 unidades por producto; ≥ 3 tiempos válidos; CV ≤ 20 % en el primer punto y CV ≤ 10 % en los puntos posteriores; sólo un tiempo posterior a alcanzar Q = ${state.Q} %.
+  Para el detalle de fórmulas y explicaciones consulte el documento anexo <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias</a>.</p>`;
+
+  html += `<h2>5. Resultados</h2>`;
+
+  perMedium.forEach(({m, summary}, i) => {
+    const medName = m.name || `Medio ${i+1}`;
+    html += `<h3>5.${i+1}. Medio de disolución: ${escapeHtml(medName)}</h3>`;
+    html += `<p><b>Volumen:</b> ${escapeHtml(m.volume||"—")} · <b>Aparato / velocidad:</b> ${escapeHtml(m.apparatus||"—")}</p>`;
+
+    // Table of means
+    html += `<table><tr><th>Tiempo (min)</th>`;
+    summary.times.forEach(t => html += `<th>${t}</th>`);
+    html += `</tr>
+      <tr><th>R̄ (%)</th>${summary.refMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
+      <tr><th>CV R (%)</th>${summary.refCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
+      <tr><th>T̄ (%)</th>${summary.testMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
+      <tr><th>CV T (%)</th>${summary.testCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
+    </table>`;
+
+    // Results per method
+    const rows = [];
+    if (!isNaN(summary.f1)) rows.push(["f<sub>1</sub>", fmtNum(summary.f1), "0 ≤ f<sub>1</sub> ≤ 15", summary.f1 <= 15]);
+    if (!isNaN(summary.f2)) rows.push(["f<sub>2</sub>", fmtNum(summary.f2), "50 ≤ f<sub>2</sub> ≤ 100", summary.f2 >= 50 && summary.f2 <= 100]);
+    if (summary.bca) rows.push(["BCa Bootstrap f<sub>2</sub> — LCL", fmtNum(summary.bca.lcl),
+      `LCL(${(100*(1-summary.bca.alpha)).toFixed(0)}%) ≥ 50`, summary.bca.lcl >= 50]);
+    if (summary.msd) rows.push([`MSD (Mahalanobis, δ=${summary.msd.delta}%) — UCL D<sub>M</sub>`,
+      fmtNum(summary.msd.DM_ucl,3), `UCL ≤ D<sub>M,máx</sub> = ${fmtNum(summary.msd.DMmax,3)}`,
+      summary.msd.DM_ucl <= summary.msd.DMmax]);
+    if (summary.t2eq) rows.push([`T<sup>2</sup>EQ (δ=${summary.t2eq.delta}%) — p-valor`,
+      summary.t2eq.p < 1e-4 ? summary.t2eq.p.toExponential(2) : summary.t2eq.p.toFixed(4),
+      `p &lt; α = ${summary.t2eq.alpha}`, summary.t2eq.p < summary.t2eq.alpha]);
+
+    html += `<table>
+      <tr><th>Método</th><th>Resultado</th><th>Criterio</th><th>Conclusión</th></tr>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r[0]}</td><td style="text-align:center;">${r[1]}</td><td style="text-align:center;">${r[2]}</td><td style="text-align:center;">${r[3] ? verdictBadge(true) : verdictBadge(false)}</td></tr>`;
+    });
+    html += `</table>`;
+
+    // Conclusion per medium
+    const primary = rows.length > 0;
+    const primaryOK = summary.f2 >= 50 && summary.f2 <= 100;
+    html += `<p><b>Conclusión (medio ${i+1}):</b> `;
+    if (!primary || isNaN(summary.f2)) {
+      html += `Datos insuficientes para concluir en este medio.`;
+    } else if (primaryOK) {
+      html += `Los perfiles de disolución del producto de prueba y del producto de referencia se consideran <b>similares</b> en el medio <i>${escapeHtml(medName)}</i> (f<sub>2</sub> = ${fmtNum(summary.f2)}, dentro del rango 50–100).`;
+      if (summary.bca) html += ` El resultado se confirma por BCa Bootstrap (LCL = ${fmtNum(summary.bca.lcl)}).`;
+      if (summary.t2eq) html += ` La prueba T<sup>2</sup>EQ ${summary.t2eq.p < summary.t2eq.alpha ? "también sustenta la equivalencia" : "no sustenta la equivalencia"} (p = ${summary.t2eq.p < 1e-4 ? summary.t2eq.p.toExponential(2) : summary.t2eq.p.toFixed(4)}).`;
+    } else {
+      html += `Los perfiles de disolución del producto de prueba <b>NO son similares</b> al producto de referencia en el medio <i>${escapeHtml(medName)}</i> (f<sub>2</sub> = ${fmtNum(summary.f2)} < 50).`;
+    }
+    html += `</p>`;
+  });
+
+  html += `<h2>6. Conclusiones globales</h2>
+  <div class="conclusion-box">`;
+  if (state.numMedia === 1) {
+    const s = perMedium[0].summary;
+    if (isNaN(s.f2)) {
+      html += `<p>No fue posible concluir por datos insuficientes.</p>`;
+    } else if (s.f2 >= 50 && s.f2 <= 100) {
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> presenta un perfil de disolución <b>similar</b> al producto de referencia <b>${escapeHtml(refName)}</b> en las condiciones ensayadas, cumpliendo con el criterio 50 ≤ f<sub>2</sub> ≤ 100 establecido por FDA (1997) [4] y EMA (2010) [8].</p>`;
+    } else {
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> <b>NO cumple</b> el criterio de similitud (f<sub>2</sub> = ${fmtNum(s.f2)} < 50) frente al producto de referencia <b>${escapeHtml(refName)}</b>.</p>`;
+    }
+  } else {
+    if (allSimilar) {
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> presenta perfiles de disolución <b>similares</b> al producto de referencia <b>${escapeHtml(refName)}</b> en <b>todos</b> los ${state.numMedia} medios evaluados, cumpliendo el criterio 50 ≤ f<sub>2</sub> ≤ 100 en cada uno.</p>`;
+    } else if (anySimilar) {
+      const okList = perMedium.filter((_,i) => perMediumF2ok[i]).map(p => p.m.name || `Medio ${p.index+1}`);
+      const badList = perMedium.filter((_,i) => !perMediumF2ok[i]).map(p => p.m.name || `Medio ${p.index+1}`);
+      html += `<p>La similitud entre <b>${escapeHtml(testName)}</b> y <b>${escapeHtml(refName)}</b> se cumple <b>parcialmente</b>: los perfiles son similares en ${okList.map(x => `<i>${escapeHtml(x)}</i>`).join(", ")}, pero <b>NO</b> en ${badList.map(x => `<i>${escapeHtml(x)}</i>`).join(", ")}. Se requiere justificación técnica adicional para la comparabilidad global.</p>`;
+    } else {
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> <b>NO cumple</b> el criterio de similitud (f<sub>2</sub> ≥ 50) en ninguno de los ${state.numMedia} medios evaluados.</p>`;
+    }
+  }
+  html += `</div>`;
+
+  html += `<h2>7. Referencias</h2>
+  <p style="font-size: 12px;">Las referencias completas en formato IEEE se detallan en el documento anexo
+  <a href="metodologia.html" target="_blank">Metodología, fórmulas y referencias (IEEE)</a>. Referencias principales citadas:</p>
+  <ol style="font-size: 12px;">
+    <li>B. Efron, "Better bootstrap confidence intervals," <i>J. Am. Stat. Assoc.</i>, vol. 82, no. 397, pp. 171–185, 1987.</li>
+    <li>B. Efron and R. J. Tibshirani, <i>An Introduction to the Bootstrap</i>. New York, NY, USA: Chapman &amp; Hall, 1993.</li>
+    <li>J. W. Moore and H. H. Flanner, "Mathematical comparison of dissolution profiles," <i>Pharm. Technol.</i>, vol. 20, no. 6, pp. 64–74, 1996.</li>
+    <li>Food and Drug Administration, <i>Guidance for Industry: Dissolution Testing of Immediate Release Solid Oral Dosage Forms</i>. Rockville, MD, USA: CDER, 1997.</li>
+    <li>V. P. Shah, Y. Tsong, P. Sathe, and J. P. Liu, "In vitro dissolution profile comparison — statistics and analysis of the similarity factor, f<sub>2</sub>," <i>Pharm. Res.</i>, vol. 15, no. 6, pp. 889–896, 1998.</li>
+    <li>T. Hoffelder, "Equivalence analyses of dissolution profiles with the Mahalanobis distance," <i>Biom. J.</i>, vol. 61, no. 5, pp. 1120–1137, 2019.</li>
+    <li>Y. Tsong, T. Hammerstrom, P. Sathe, and V. P. Shah, "Statistical assessment of mean differences between two dissolution data sets," <i>Drug Inf. J.</i>, vol. 30, no. 4, pp. 1105–1112, 1996.</li>
+    <li>European Medicines Agency, <i>Guideline on the Investigation of Bioequivalence</i>, CPMP/EWP/QWP/1401/98 Rev. 1. London, U.K.: EMA, 2010.</li>
+    <li>European Medicines Agency, <i>Question and Answer on the Adequacy of the Mahalanobis Distance to Assess the Comparability of Drug Dissolution Profiles</i>. London, U.K.: EMA, 2018.</li>
+    <li>S. Wellek, <i>Testing Statistical Hypotheses of Equivalence and Noninferiority</i>, 2nd ed. Boca Raton, FL, USA: Chapman &amp; Hall/CRC, 2010.</li>
+  </ol>`;
+
+  html += `<p style="margin-top: 25px; font-size: 10.5px; color: #666; text-align: center; border-top: 1px solid #999; padding-top: 10px;">
+    Reporte generado electrónicamente por el Calculador f<sub>1</sub>/f<sub>2</sub> — Perfiles de Disolución.
+    Fecha de generación: ${new Date().toLocaleString()}. Firma del responsable: ______________________________
+  </p>`;
+
+  const out = $("report_output");
+  out.innerHTML = html;
+  out.style.display = "block";
+  out.scrollIntoView({behavior: "smooth", block: "start"});
+}
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function printReport() {
+  const out = $("report_output");
+  if (!out || out.style.display === "none" || !out.innerHTML) {
+    generateReport();
+  }
+  setTimeout(() => window.print(), 300);
+}
 
 window.addEventListener("resize", () => drawChart(computeStats("ref"), computeStats("test")));
 
 // initial
-rebuildTables();
+rebuildMedia();          // creates state.media[0] with defaults
+rebuildTables();         // sync structure across media, alias live to media[0]
+loadActiveMedium(0);     // load identity fields (name, vol, apparatus) from media[0]
+renderMediumTabs();
 
 </script>
 </body>

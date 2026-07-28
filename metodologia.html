@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metodología, fórmulas y referencias — Perfiles de Disolución</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         margin: 0; background: #f5f7fa; color: #1e2733; font-size: 14px; line-height: 1.55; }
+  header { background: linear-gradient(135deg, #0b5cad, #084a8c); color: #fff; padding: 22px 28px; }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0; opacity: 0.9; font-size: 13px; }
+  header a { color: #fff; background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 5px;
+             text-decoration: none; font-size: 12.5px; border: 1px solid rgba(255,255,255,0.3);
+             display: inline-block; margin-top: 8px; }
+  header a:hover { background: rgba(255,255,255,0.28); }
+  main { max-width: 1050px; margin: 0 auto; padding: 24px 28px 60px; }
+  .card { background: #fff; border: 1px solid #d7dde5; border-radius: 10px;
+          padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  h2 { margin: 0 0 10px; font-size: 18px; color: #0b5cad; border-bottom: 2px solid #d7dde5; padding-bottom: 8px; }
+  h3 { margin: 18px 0 8px; font-size: 15px; color: #0b5cad; }
+  h4 { margin: 12px 0 4px; font-size: 13px; color: #5b6673; text-transform: uppercase; letter-spacing: 0.5px; }
+  p { margin: 6px 0 10px; }
+  ul, ol { padding-left: 22px; margin: 6px 0; }
+  li { margin-bottom: 4px; }
+  code, .formula { font-family: "Cambria Math", "Latin Modern Math", Georgia, serif;
+                    background: #f2f6fb; padding: 2px 5px; border-radius: 3px; font-size: 13.5px; }
+  .formula-block { display: block; padding: 12px 16px; background: #f2f6fb;
+                    border-left: 4px solid #0b5cad; margin: 10px 0; font-family: "Cambria Math", "Latin Modern Math", Georgia, serif;
+                    font-size: 15px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  th, td { border: 1px solid #b6bfcc; padding: 6px 10px; text-align: left; }
+  th { background: #eef2f7; }
+  .toc { background: #f9fafc; border-left: 4px solid #0b5cad; padding: 12px 20px; }
+  .toc ol { margin: 6px 0; padding-left: 22px; }
+  .toc a { color: #0b5cad; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .refs { font-size: 12.5px; }
+  .refs ol { padding-left: 30px; }
+  .refs li { margin-bottom: 8px; text-indent: -15px; padding-left: 15px; }
+  .note { background: #fef8e6; border-left: 4px solid #f0d78a; padding: 10px 14px; font-size: 13px; margin: 10px 0; color: #6b4a00; }
+  var, .var { font-style: italic; font-family: "Cambria Math", Georgia, serif; }
+  sub, sup { font-size: 0.75em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Metodología, fórmulas y referencias</h1>
+  <p>Documento anexo del Calculador f<sub>1</sub>/f<sub>2</sub> — Perfiles de Disolución.
+     Base teórica de todos los modelos estadísticos implementados, con referencias en formato IEEE.</p>
+  <a href="f1_f2_calculator.html">← Volver al calculador</a>
+</header>
+
+<main>
+
+<section class="card toc">
+  <h2 style="margin-top:0;">Contenido</h2>
+  <ol>
+    <li><a href="#introduccion">Introducción y marco regulatorio</a></li>
+    <li><a href="#definiciones">Definiciones básicas</a></li>
+    <li><a href="#f1">Factor de diferencia f<sub>1</sub></a></li>
+    <li><a href="#f2">Factor de similitud f<sub>2</sub></a></li>
+    <li><a href="#restricciones">Restricciones de aplicabilidad de f<sub>2</sub></a></li>
+    <li><a href="#bca">BCa Bootstrap f<sub>2</sub></a></li>
+    <li><a href="#msd">Distancia de Mahalanobis y ACLMD (MSD-test)</a></li>
+    <li><a href="#t2eq">Prueba T<sup>2</sup>EQ de equivalencia (Hoffelder / Wellek)</a></li>
+    <li><a href="#numerico">Métodos numéricos utilizados en la implementación</a></li>
+    <li><a href="#seleccion">Guía para la selección del método adecuado</a></li>
+    <li><a href="#referencias">Referencias (formato IEEE)</a></li>
+  </ol>
+</section>
+
+<section class="card" id="introduccion">
+  <h2>1. Introducción y marco regulatorio</h2>
+  <p>La comparación de perfiles de disolución <i>in vitro</i> es un procedimiento fundamental en la industria farmacéutica para
+  demostrar la comparabilidad entre un producto de prueba (T) y un producto de referencia (R). Su aplicación cubre desde el
+  desarrollo de genéricos y bioexenciones (BCS clase I y III) hasta cambios post-aprobación de escala, sitio, formulación o
+  proveedor de materia prima [4], [8], [15].</p>
+
+  <p>Las principales guías regulatorias que rigen esta comparación son:</p>
+  <ul>
+    <li>FDA (1997): <i>Guidance for Industry — Dissolution Testing of Immediate Release Solid Oral Dosage Forms</i> [4].</li>
+    <li>EMA (2010): <i>Guideline on the Investigation of Bioequivalence</i>, CPMP/EWP/QWP/1401/98 Rev. 1 [8].</li>
+    <li>EMA (2018): <i>Q&amp;A on the Adequacy of the Mahalanobis Distance to Assess Comparability of Drug Dissolution Profiles</i> [9].</li>
+    <li>ICH M9 (2020): <i>Biopharmaceutics Classification System-Based Biowaivers</i>.</li>
+    <li>WHO Technical Report Series 937, Annex 7 (2006): <i>Multisource pharmaceutical products — guidelines on registration requirements to establish interchangeability</i>.</li>
+  </ul>
+  <p>Todas coinciden en el uso del factor de similitud f<sub>2</sub> como el estadístico primario, pero reconocen sus limitaciones
+  cuando la variabilidad intra-lote es alta (CV &gt; 20 % en el primer punto o &gt; 10 % en los subsiguientes) o el número de
+  unidades es pequeño. En esos escenarios se recomiendan métodos alternativos: BCa Bootstrap f<sub>2</sub> [1], [5], distancia
+  de Mahalanobis [7] y la prueba T<sup>2</sup>EQ [6], [9], [10].</p>
+</section>
+
+<section class="card" id="definiciones">
+  <h2>2. Definiciones básicas</h2>
+  <table>
+    <tr><th>Símbolo</th><th>Significado</th></tr>
+    <tr><td><var>R<sub>t</sub></var></td><td>Porcentaje disuelto medio del producto de referencia al tiempo <var>t</var>.</td></tr>
+    <tr><td><var>T<sub>t</sub></var></td><td>Porcentaje disuelto medio del producto de prueba al tiempo <var>t</var>.</td></tr>
+    <tr><td><var>n</var></td><td>Número de tiempos de muestreo utilizados en el cálculo del estadístico.</td></tr>
+    <tr><td><var>n<sub>R</sub></var>, <var>n<sub>T</sub></var></td><td>Número de vasos (unidades) en R y T (usualmente 12 cada uno).</td></tr>
+    <tr><td><var>p</var></td><td>Dimensión del vector de perfiles (número de tiempos de muestreo).</td></tr>
+    <tr><td><var>CV</var></td><td>Coeficiente de variación porcentual (100 · DE / media).</td></tr>
+    <tr><td><var>Q</var></td><td>Especificación de liberación (típicamente 85 %).</td></tr>
+    <tr><td><var>S<sub>p</sub></var></td><td>Matriz de covarianza combinada de R y T.</td></tr>
+    <tr><td><var>MD</var></td><td>Distancia de Mahalanobis (al cuadrado) entre los perfiles medios.</td></tr>
+    <tr><td><var>D<sub>M</sub></var></td><td>Raíz de MD (distancia de Mahalanobis observada).</td></tr>
+    <tr><td><var>EM</var></td><td>Margen de equivalencia (Equivalence Margin) = D<sup>T</sup> S<sub>p</sub><sup>−1</sup> D con D = (10, …, 10).</td></tr>
+    <tr><td>α</td><td>Nivel de significancia (típico 0.05).</td></tr>
+    <tr><td>B</td><td>Número de iteraciones bootstrap.</td></tr>
+  </table>
+</section>
+
+<section class="card" id="f1">
+  <h2>3. Factor de diferencia f<sub>1</sub></h2>
+  <p>Introducido por Moore y Flanner [3], mide el porcentaje promedio de diferencia entre las dos curvas a lo largo del tiempo.
+  Fue adoptado por la FDA como criterio complementario a f<sub>2</sub>.</p>
+  <div class="formula-block">
+    f<sub>1</sub> = { [ Σ<sub>t=1..n</sub> |R<sub>t</sub> − T<sub>t</sub>| ] / [ Σ<sub>t=1..n</sub> R<sub>t</sub> ] } × 100
+  </div>
+  <h4>Interpretación</h4>
+  <ul>
+    <li>f<sub>1</sub> = 0: las curvas son idénticas.</li>
+    <li>0 ≤ f<sub>1</sub> ≤ 15: los perfiles son <b>similares</b> (criterio FDA).</li>
+    <li>f<sub>1</sub> &gt; 15: los perfiles son diferentes.</li>
+  </ul>
+  <p>f<sub>1</sub> es sensible a diferencias absolutas y por sí solo no es suficiente; se usa siempre en conjunto con f<sub>2</sub>.</p>
+</section>
+
+<section class="card" id="f2">
+  <h2>4. Factor de similitud f<sub>2</sub></h2>
+  <p>También introducido por Moore y Flanner [3] y adoptado por FDA (1997) [4], EMA (2010) [8] y prácticamente todas las agencias
+  regulatorias. Es una transformación logarítmica de la suma de las diferencias cuadráticas entre los perfiles medios.</p>
+  <div class="formula-block">
+    f<sub>2</sub> = 50 · log<sub>10</sub> { [ 1 + (1/n) · Σ<sub>t=1..n</sub> (R<sub>t</sub> − T<sub>t</sub>)² ]<sup>−½</sup> · 100 }
+  </div>
+  <h4>Interpretación</h4>
+  <ul>
+    <li>f<sub>2</sub> = 100: perfiles idénticos.</li>
+    <li>50 ≤ f<sub>2</sub> ≤ 100: <b>perfiles similares</b> (una diferencia promedio ≤ 10 % en todos los tiempos).</li>
+    <li>f<sub>2</sub> &lt; 50: perfiles no similares.</li>
+  </ul>
+  <h4>Fundamento estadístico</h4>
+  <p>Cuando la diferencia promedio (media cuadrática de las diferencias, QMD) es exactamente 10 % en todos los tiempos, f<sub>2</sub> = 50.
+  El valor máximo de 100 corresponde a diferencia nula. La transformación logarítmica lo hace más sensible a diferencias pequeñas [11].</p>
+</section>
+
+<section class="card" id="restricciones">
+  <h2>5. Restricciones de aplicabilidad de f<sub>2</sub></h2>
+  <p>Las guías FDA (1997) [4] y EMA (2010) [8] establecen las siguientes condiciones para que el cálculo de f<sub>2</sub> sea aceptable:</p>
+  <ol>
+    <li>Un mínimo de 12 unidades por producto en cada tiempo.</li>
+    <li>Al menos 3 tiempos de muestreo (excluyendo el tiempo cero).</li>
+    <li>Los productos R y T deben evaluarse con exactamente los mismos tiempos de muestreo.</li>
+    <li>Solo un tiempo posterior al alcance de Q = 85 % (o al plateau) debe incluirse.</li>
+    <li>Coeficiente de variación (CV) ≤ 20 % en el primer punto y ≤ 10 % en los puntos subsecuentes.</li>
+    <li>Si ambos productos disuelven ≥ 85 % en ≤ 15 min, se consideran de disolución muy rápida (VRD) y f<sub>2</sub> no es necesario
+    para la bioexención (ICH M9, BCS clase I).</li>
+  </ol>
+  <p>Cuando la variabilidad excede los límites, deben utilizarse métodos alternativos como BCa Bootstrap, MSD o T<sup>2</sup>EQ.</p>
+</section>
+
+<section class="card" id="bca">
+  <h2>6. BCa Bootstrap f<sub>2</sub></h2>
+  <p>Introducido por Efron (1987) [1] y aplicado por primera vez a f<sub>2</sub> por Shah et al. (1998) [5]. Proporciona un intervalo
+  de confianza para f<sub>2</sub> corregido por sesgo (<i>bias-corrected</i>) y acelerado (<i>accelerated</i>). Es el método recomendado
+  cuando la variabilidad intra-lote impide el uso directo de f<sub>2</sub>.</p>
+
+  <h3>6.1 Procedimiento</h3>
+  <ol>
+    <li>Calcular f<sub>2</sub> observado (f̂<sub>2</sub>) con los datos originales.</li>
+    <li>Generar B muestras bootstrap (típicamente B = 5 000 a 10 000). En cada iteración:
+      <ul>
+        <li>Remuestrear con reemplazo los perfiles completos de R (nR vasos) y de T (nT vasos), preservando la correlación intra-vaso.</li>
+        <li>Calcular f<sub>2</sub>* con las medias del remuestreo.</li>
+      </ul>
+    </li>
+    <li>Ordenar la distribución {f<sub>2</sub>*}.</li>
+    <li>Calcular la corrección de sesgo:
+      <div class="formula-block">
+        z<sub>0</sub> = Φ<sup>−1</sup>( #{f<sub>2</sub>* &lt; f̂<sub>2</sub>} / B )
+      </div>
+    </li>
+    <li>Calcular la aceleración por jackknife (leave-one-vessel-out sobre R y T):
+      <div class="formula-block">
+        a = Σ (θ̄ − θ<sub>(i)</sub>)³ / { 6 · [ Σ (θ̄ − θ<sub>(i)</sub>)² ]<sup>3/2</sup> }
+      </div>
+      donde θ<sub>(i)</sub> es f<sub>2</sub> calculado dejando fuera el vaso <var>i</var>.
+    </li>
+    <li>Calcular los percentiles ajustados BCa:
+      <div class="formula-block">
+        α<sub>1</sub> = Φ( z<sub>0</sub> + (z<sub>0</sub> + z<sub>α</sub>) / (1 − a·(z<sub>0</sub> + z<sub>α</sub>)) )<br>
+        α<sub>2</sub> = Φ( z<sub>0</sub> + (z<sub>0</sub> + z<sub>1−α</sub>) / (1 − a·(z<sub>0</sub> + z<sub>1−α</sub>)) )
+      </div>
+    </li>
+    <li>Los límites LCL y UCL corresponden a los cuantiles α<sub>1</sub> y α<sub>2</sub> de la distribución bootstrap ordenada.</li>
+  </ol>
+
+  <h3>6.2 Criterio de decisión</h3>
+  <p>El límite inferior de confianza al 90 % (LCL) del f<sub>2</sub> BCa debe ser <b>≥ 50</b> para declarar perfiles similares.
+  Este criterio es más conservador que f<sub>2</sub> puntual y controla mejor el error tipo I en presencia de variabilidad [5].</p>
+  <div class="note">Nota: El PRNG de la aplicación (mulberry32) es determinístico con la semilla especificada, lo que garantiza
+    la <b>reproducibilidad exacta</b> de los resultados bootstrap para propósitos regulatorios.</div>
+</section>
+
+<section class="card" id="msd">
+  <h2>7. Distancia de Mahalanobis y método ACLMD (MSD-test)</h2>
+  <p>Introducido por Tsong et al. (1996) [7]. Utiliza la distancia de Mahalanobis, una medida multivariada estandarizada que tiene
+  en cuenta la matriz de covarianza combinada entre R y T.</p>
+
+  <h3>7.1 Cálculo de la distancia</h3>
+  <div class="formula-block">
+    MD = (μ<sub>R</sub> − μ<sub>T</sub>)<sup>T</sup> · S<sub>p</sub><sup>−1</sup> · (μ<sub>R</sub> − μ<sub>T</sub>)
+  </div>
+  <p>donde μ<sub>R</sub>, μ<sub>T</sub> son los vectores de medias por tiempo y S<sub>p</sub> la matriz de covarianza combinada:</p>
+  <div class="formula-block">
+    S<sub>p</sub> = [ (n<sub>R</sub> − 1) · S<sub>R</sub> + (n<sub>T</sub> − 1) · S<sub>T</sub> ] / (n<sub>R</sub> + n<sub>T</sub> − 2)
+  </div>
+  <p>La distancia observada es D<sub>M</sub> = √MD.</p>
+
+  <h3>7.2 Límite de similitud (Tsong et al. 1996 / EMA 2010)</h3>
+  <p>Se define un vector D = (10, 10, …, 10) que representa una diferencia máxima aceptable del 10 % en cada tiempo. El límite
+  de similitud es:</p>
+  <div class="formula-block">
+    D<sub>M,máx</sub> = √( D<sup>T</sup> · S<sub>p</sub><sup>−1</sup> · D )
+  </div>
+
+  <h3>7.3 Intervalo de confianza (ACLMD)</h3>
+  <p>Se calcula el estadístico de Hotelling T² y su distribución no-central F para obtener el límite superior del intervalo
+  de confianza al 90 % sobre MD:</p>
+  <div class="formula-block">
+    T² = [ n<sub>R</sub>·n<sub>T</sub>/(n<sub>R</sub>+n<sub>T</sub>) ] · MD<br>
+    F = [ (n<sub>R</sub> + n<sub>T</sub> − p − 1) / ((n<sub>R</sub> + n<sub>T</sub> − 2)·p) ] · T² ~ F(p, n<sub>R</sub>+n<sub>T</sub>−p−1, λ)
+  </div>
+  <p>El UCL para MD se obtiene invirtiendo la CDF de F no-central respecto al parámetro de no-centralidad λ.</p>
+
+  <h3>7.4 Criterio de decisión</h3>
+  <p>Perfiles similares si <b>UCL(D<sub>M</sub>) ≤ D<sub>M,máx</sub></b> [7].</p>
+  <div class="note">Limitación conocida (Hoffelder 2019, [6]): el ACLMD estándar puede favorecer a experimentos con alta
+    variabilidad. El T<sup>2</sup>EQ resuelve este problema (ver §8).</div>
+</section>
+
+<section class="card" id="t2eq">
+  <h2>8. Prueba T<sup>2</sup>EQ de equivalencia (Hoffelder-Wellek)</h2>
+  <p>Formulada por Wellek (2010) [10] y adaptada al contexto de perfiles de disolución por Hoffelder (2018, 2019) [6]. Es el método
+  actualmente recomendado por la EMA (2018) [9] para perfiles altamente variables. Está implementada en el paquete R
+  <code>T2EQ</code> (CRAN).</p>
+
+  <h3>8.1 Hipótesis (invertidas respecto a T² clásico)</h3>
+  <p>H<sub>0</sub>: MD ≥ EM (no equivalencia) &nbsp;&nbsp; vs. &nbsp;&nbsp; H<sub>1</sub>: MD &lt; EM (equivalencia).</p>
+  <p>Rechazar H<sub>0</sub> a favor de H<sub>1</sub> demuestra la equivalencia. Este planteamiento controla adecuadamente el
+  error tipo I regulatorio.</p>
+
+  <h3>8.2 Margen de equivalencia (EMA 2010, δ = 10 %)</h3>
+  <div class="formula-block">
+    EM = D<sup>T</sup> · S<sub>p</sub><sup>−1</sup> · D , &nbsp; con D = (10, 10, …, 10)
+  </div>
+
+  <h3>8.3 Estadístico y distribución</h3>
+  <div class="formula-block">
+    T² = n<sub>pool</sub> · MD ,  n<sub>pool</sub> = n<sub>R</sub>·n<sub>T</sub>/(n<sub>R</sub>+n<sub>T</sub>)<br>
+    F<sub>obs</sub> = [ (n<sub>R</sub>+n<sub>T</sub>−p−1) / ((n<sub>R</sub>+n<sub>T</sub>−2)·p) ] · T²<br>
+    Bajo H<sub>0</sub> en la frontera: F<sub>obs</sub> ~ F<sub>no-central</sub>(df<sub>1</sub>=p, df<sub>2</sub>=n<sub>R</sub>+n<sub>T</sub>−p−1, λ = n<sub>pool</sub>·EM)
+  </div>
+
+  <h3>8.4 p-valor</h3>
+  <p>Se calcula como la probabilidad acumulada inferior:</p>
+  <div class="formula-block">
+    p = P( F<sub>no-central</sub>(df<sub>1</sub>, df<sub>2</sub>, λ) ≤ F<sub>obs</sub> )
+  </div>
+  <p>La CDF de la F no-central se implementa como una mezcla Poisson de CDF de betas centrales regularizadas [16]:</p>
+  <div class="formula-block">
+    F(f; ν<sub>1</sub>, ν<sub>2</sub>, λ) = Σ<sub>j=0</sub><sup>∞</sup> [ e<sup>−λ/2</sup> (λ/2)<sup>j</sup> / j! ] · I<sub>y</sub>(ν<sub>1</sub>/2 + j, ν<sub>2</sub>/2)<br>
+    con y = ν<sub>1</sub>·f / (ν<sub>2</sub> + ν<sub>1</sub>·f)
+  </div>
+
+  <h3>8.5 Criterio de decisión</h3>
+  <p>Perfiles equivalentes si <b>p &lt; α</b> (típicamente α = 0.05). Interpretación análoga a f<sub>2</sub> &gt; 50 pero con
+  control estadístico exacto del error tipo I [6].</p>
+
+  <h3>8.6 Ventajas frente al f<sub>2</sub> clásico</h3>
+  <ul>
+    <li>Válido para cualquier nivel de variabilidad, incluidos perfiles altamente variables.</li>
+    <li>Control exacto del error tipo I (a diferencia de f<sub>2</sub> puntual).</li>
+    <li>Permite cálculos de tamaño de muestra <i>a priori</i>.</li>
+    <li>Reconocido por la EMA (2018) [9] para reemplazar f<sub>2</sub> en casos justificados.</li>
+  </ul>
+</section>
+
+<section class="card" id="numerico">
+  <h2>9. Métodos numéricos utilizados en la implementación</h2>
+  <p>Todas las funciones estadísticas y matemáticas están implementadas directamente en JavaScript, sin dependencias externas,
+  para garantizar que la aplicación funcione 100 % local, sin instalación y sin conexión a Internet.</p>
+
+  <h4>9.1 Función log-Gamma</h4>
+  <p>Aproximación de Lanczos (g = 7, 8 coeficientes), con precisión ~15 dígitos para argumentos positivos.</p>
+
+  <h4>9.2 Función Beta incompleta regularizada I<sub>x</sub>(a, b)</h4>
+  <p>Cálculo mediante fracción continua (algoritmo <i>betacf</i> de Numerical Recipes) con criterio de convergencia
+  EPS = 3·10⁻⁸ y 200 iteraciones máximas. Utilizada tanto para la CDF de la F central como no-central.</p>
+
+  <h4>9.3 CDF y CDF inversa de la Normal estándar</h4>
+  <p>CDF: aproximación racional de Abramowitz &amp; Stegun 7.1.26 (error &lt; 7.5·10⁻⁸). Inversa: algoritmo de Beasley–Springer–Moro,
+  precisión &lt; 4·10⁻⁹ en todo el rango.</p>
+
+  <h4>9.4 CDF de la F no-central</h4>
+  <p>Serie de Poisson comenzada en el modo (⌊λ/2⌋) y expandida bilateralmente hasta que los incrementos son menores a
+  EPS·suma. Cada término es un producto de peso Poisson por CDF de beta central.</p>
+
+  <h4>9.5 Inversión de matrices</h4>
+  <p>Eliminación de Gauss–Jordan con pivoteo parcial. Detecta y reporta matriz singular cuando el pivote absoluto es menor
+  que 10⁻¹⁴.</p>
+
+  <h4>9.6 Generador pseudoaleatorio</h4>
+  <p>Mulberry32 (32-bit), con semilla especificada por el usuario. Determinístico y de excelente calidad para B ≤ 10⁶
+  iteraciones.</p>
+
+  <h4>9.7 Validación numérica</h4>
+  <p>Los algoritmos fueron verificados contra valores tabulados: Φ(1.96) = 0.9750, Φ<sup>−1</sup>(0.975) = 1.9600,
+  I<sub>0.5</sub>(2, 3) = 0.6875, F<sub>1,10</sub>(2.5) = 0.855.</p>
+</section>
+
+<section class="card" id="seleccion">
+  <h2>10. Guía para la selección del método adecuado</h2>
+  <table>
+    <tr>
+      <th>Escenario</th>
+      <th>Método recomendado</th>
+      <th>Referencia</th>
+    </tr>
+    <tr>
+      <td>Perfiles con baja variabilidad (CV cumple restricciones)</td>
+      <td>f<sub>1</sub> y f<sub>2</sub> tradicionales</td>
+      <td>[3], [4]</td>
+    </tr>
+    <tr>
+      <td>Muestra pequeña o variabilidad moderada-alta</td>
+      <td>BCa Bootstrap f<sub>2</sub></td>
+      <td>[1], [5]</td>
+    </tr>
+    <tr>
+      <td>Datos multivariados; sospecha de correlación temporal</td>
+      <td>MSD (ACLMD, Tsong)</td>
+      <td>[7]</td>
+    </tr>
+    <tr>
+      <td>Perfiles altamente variables (CV &gt; 20 %); requerimiento EMA</td>
+      <td>T<sup>2</sup>EQ (Hoffelder-Wellek)</td>
+      <td>[6], [9], [10]</td>
+    </tr>
+    <tr>
+      <td>Productos de liberación muy rápida (≥ 85 % en ≤ 15 min)</td>
+      <td>Bioexención ICH M9 sin cálculo de f<sub>2</sub></td>
+      <td>ICH M9 (2020)</td>
+    </tr>
+  </table>
+  <div class="note">Recomendación práctica: reporte siempre f<sub>1</sub>, f<sub>2</sub> y al menos uno de los métodos avanzados
+    (BCa o T<sup>2</sup>EQ). En caso de discrepancia, prevalece el criterio del método más robusto (T<sup>2</sup>EQ para EMA;
+    BCa para FDA).</div>
+</section>
+
+<section class="card refs" id="referencias">
+  <h2>11. Referencias (formato IEEE)</h2>
+  <ol>
+    <li>[1] B. Efron, "Better bootstrap confidence intervals," <i>Journal of the American Statistical Association</i>,
+      vol. 82, no. 397, pp. 171–185, Mar. 1987, doi: 10.1080/01621459.1987.10478410.</li>
+    <li>[2] B. Efron and R. J. Tibshirani, <i>An Introduction to the Bootstrap</i>. New York, NY, USA: Chapman &amp; Hall, 1993.</li>
+    <li>[3] J. W. Moore and H. H. Flanner, "Mathematical comparison of dissolution profiles," <i>Pharmaceutical Technology</i>,
+      vol. 20, no. 6, pp. 64–74, Jun. 1996.</li>
+    <li>[4] U.S. Food and Drug Administration, <i>Guidance for Industry: Dissolution Testing of Immediate Release Solid Oral
+      Dosage Forms</i>. Rockville, MD, USA: Center for Drug Evaluation and Research (CDER), Aug. 1997. [Online]. Available:
+      https://www.fda.gov/regulatory-information/search-fda-guidance-documents</li>
+    <li>[5] V. P. Shah, Y. Tsong, P. Sathe, and J. P. Liu, "In vitro dissolution profile comparison — statistics and analysis of
+      the similarity factor, f<sub>2</sub>," <i>Pharmaceutical Research</i>, vol. 15, no. 6, pp. 889–896, Jun. 1998,
+      doi: 10.1023/A:1011976615750.</li>
+    <li>[6] T. Hoffelder, "Equivalence analyses of dissolution profiles with the Mahalanobis distance," <i>Biometrical Journal</i>,
+      vol. 61, no. 5, pp. 1120–1137, Sep. 2019, doi: 10.1002/bimj.201700257.</li>
+    <li>[7] Y. Tsong, T. Hammerstrom, P. Sathe, and V. P. Shah, "Statistical assessment of mean differences between two dissolution
+      data sets," <i>Drug Information Journal</i>, vol. 30, no. 4, pp. 1105–1112, Oct. 1996, doi: 10.1177/009286159603000427.</li>
+    <li>[8] European Medicines Agency, <i>Guideline on the Investigation of Bioequivalence</i>, CPMP/EWP/QWP/1401/98 Rev. 1.
+      London, U.K.: Committee for Medicinal Products for Human Use (CHMP), Jan. 2010.</li>
+    <li>[9] European Medicines Agency, <i>Question and Answer on the Adequacy of the Mahalanobis Distance to Assess the
+      Comparability of Drug Dissolution Profiles</i>, EMA/CHMP/CVMP/QWP/336031/2017. London, U.K.: EMA, Jul. 2018.</li>
+    <li>[10] S. Wellek, <i>Testing Statistical Hypotheses of Equivalence and Noninferiority</i>, 2nd ed. Boca Raton, FL, USA:
+      Chapman &amp; Hall/CRC, 2010.</li>
+    <li>[11] Y. Tsong, T. Hammerstrom, and J. P. Chen, "Multipoint dissolution specification and acceptance sampling rule based on
+      profile modeling and principal component analysis," <i>Journal of Biopharmaceutical Statistics</i>, vol. 7, no. 3, pp. 423–439,
+      1997, doi: 10.1080/10543409708835198.</li>
+    <li>[12] T. Hoffelder, R. Gössl, and S. Wellek, "Multivariate equivalence tests for use in pharmaceutical development,"
+      <i>Journal of Biopharmaceutical Statistics</i>, vol. 25, no. 3, pp. 417–437, 2015, doi: 10.1080/10543406.2014.920344.</li>
+    <li>[13] J. D. Gomez-Mantilla, U. F. Schaefer, V. G. Casabo, T. Lehr, and C. M. Lehr, "Statistical comparison of dissolution
+      profiles to predict the bioequivalence of extended release formulations," <i>The AAPS Journal</i>, vol. 16, no. 4, pp. 791–801,
+      Jul. 2014, doi: 10.1208/s12248-014-9615-6.</li>
+    <li>[14] O. Collignon, K. Möllenhoff, and H. Dette, "Equivalence analyses of dissolution profiles with the Mahalanobis distance:
+      a regulatory perspective and a comparison with a parametric maximum deviation-based approach," <i>Biometrical Journal</i>,
+      vol. 61, no. 3, pp. 779–782, May 2019, doi: 10.1002/bimj.201900047.</li>
+    <li>[15] International Council for Harmonisation, <i>ICH Harmonised Guideline M9: Biopharmaceutics Classification System-Based
+      Biowaivers</i>. Geneva, Switzerland: ICH, Nov. 2019.</li>
+    <li>[16] W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery, <i>Numerical Recipes: The Art of Scientific
+      Computing</i>, 3rd ed. Cambridge, U.K.: Cambridge University Press, 2007.</li>
+    <li>[17] M. Abramowitz and I. A. Stegun, <i>Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical
+      Tables</i>, 9th printing. New York, NY, USA: Dover, 1972.</li>
+    <li>[18] World Health Organization, <i>WHO Technical Report Series No. 937, Annex 7 — Multisource (Generic) Pharmaceutical
+      Products: Guidelines on Registration Requirements to Establish Interchangeability</i>. Geneva, Switzerland: WHO, 2006.</li>
+    <li>[19] J. Carpenter and J. Bithell, "Bootstrap confidence intervals: when, which, what? A practical guide for medical
+      statisticians," <i>Statistics in Medicine</i>, vol. 19, no. 9, pp. 1141–1164, May 2000,
+      doi: 10.1002/(SICI)1097-0258(20000515)19:9&lt;1141::AID-SIM479&gt;3.0.CO;2-F.</li>
+    <li>[20] P. Costa and J. M. Sousa Lobo, "Modeling and comparison of dissolution profiles," <i>European Journal of Pharmaceutical
+      Sciences</i>, vol. 13, no. 2, pp. 123–133, May 2001, doi: 10.1016/S0928-0987(01)00095-1.</li>
+  </ol>
+</section>
+
+<p style="text-align: center; font-size: 11.5px; color: #5b6673; margin-top: 25px;">
+  Documento anexo del Calculador f<sub>1</sub>/f<sub>2</sub> — Perfiles de Disolución. Fórmulas y referencias en formato IEEE.
+</p>
+
+</main>
+</body>
+</html>
