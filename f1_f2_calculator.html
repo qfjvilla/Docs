@@ -504,9 +504,31 @@
   <label>Objetivo específico del estudio (opcional — se completará automáticamente si se deja vacío)</label>
   <input type="text" id="rep_objective" placeholder="p. ej. Demostrar la similitud de perfiles con miras a un bioexención BCS clase I">
 
+  <div style="margin-top: 12px;">
+    <label style="font-weight: 600; color: #6b4a00;">Medios a incluir en el reporte</label>
+    <div id="medium_selector" style="background: #fef8e6; border: 1px solid #f0d78a; padding: 10px 14px; border-radius: 6px; margin-top: 4px;"></div>
+  </div>
+
+  <div style="margin-top: 12px;">
+    <label style="font-weight: 600;">Nivel de detalle</label>
+    <div style="padding: 6px 0;">
+      <label style="display: inline-block; margin-right: 15px; font-weight: normal;">
+        <input type="checkbox" id="rep_include_individual" checked> Incluir datos individuales por vaso
+      </label>
+      <label style="display: inline-block; margin-right: 15px; font-weight: normal;">
+        <input type="checkbox" id="rep_include_stats" checked> Incluir medias, DE y CV por tiempo
+      </label>
+      <label style="display: inline-block; font-weight: normal;">
+        <input type="checkbox" id="rep_include_advanced" checked> Incluir métodos avanzados (BCa, MSD, T2EQ)
+      </label>
+    </div>
+  </div>
+
   <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
     <button onclick="generateReport()">Generar reporte</button>
     <button class="secondary" onclick="printReport()">Imprimir reporte / PDF</button>
+    <button class="secondary" onclick="exportReportAsHtml()">Descargar como HTML</button>
+    <button class="secondary" onclick="exportReportAsWord()">Descargar como Word (.doc)</button>
     <button class="secondary" onclick="document.getElementById('report_output').style.display='none'">Ocultar reporte</button>
   </div>
 
@@ -1819,7 +1841,7 @@ $("cfg_Q").addEventListener("input", () => { state.Q = parseFloat($("cfg_Q").val
   const el = $(id);
   if (el) el.addEventListener("input", () => { try { computeMsdT2eq(); } catch(e) { console.error(e); } });
 });
-$("cfg_num_media").addEventListener("input", () => { saveActiveMedium(); rebuildMedia(); renderMediumTabs(); });
+$("cfg_num_media").addEventListener("input", () => { saveActiveMedium(); rebuildMedia(); renderMediumTabs(); renderMediumSelector(); });
 ["medium_name","medium_vol","medium_apparatus"].forEach(id => {
   $(id).addEventListener("input", () => {
     const m = state.media[state.activeIdx];
@@ -1829,6 +1851,7 @@ $("cfg_num_media").addEventListener("input", () => { saveActiveMedium(); rebuild
       m.apparatus = $("medium_apparatus").value;
     }
     renderMediumTabs();
+    renderMediumSelector();
   });
 });
 if ($("rep_date") && !$("rep_date").value) $("rep_date").value = new Date().toISOString().slice(0,10);
@@ -1841,6 +1864,34 @@ function fmtNum(x, d=2) {
 function verdictBadge(ok) {
   return ok ? '<span class="badge-ok">SIMILARES</span>' : '<span class="badge-bad">NO SIMILARES</span>';
 }
+function renderMediumSelector() {
+  const c = $("medium_selector");
+  if (!c) return;
+  c.innerHTML = "";
+  for (let i = 0; i < state.numMedia; i++) {
+    const nm = state.media[i] && state.media[i].name ? state.media[i].name : `Medio ${i+1}`;
+    const id = "sel_medium_" + i;
+    const lbl = document.createElement("label");
+    lbl.style.cssText = "display: inline-block; margin-right: 15px; font-weight: normal;";
+    lbl.innerHTML = `<input type="checkbox" id="${id}" data-mi="${i}" checked> ${escapeHtml(nm)}`;
+    c.appendChild(lbl);
+  }
+  if (state.numMedia === 1) {
+    const hint = document.createElement("div");
+    hint.style.cssText = "font-size: 11.5px; color: #6b4a00; margin-top: 4px;";
+    hint.textContent = "(Al configurar 2–5 medios podrá elegir cuáles incluir en el reporte).";
+    c.appendChild(hint);
+  }
+}
+function getSelectedMediaIndices() {
+  const sel = [];
+  for (let i = 0; i < state.numMedia; i++) {
+    const cb = $("sel_medium_" + i);
+    if (cb && cb.checked) sel.push(i);
+  }
+  return sel.length > 0 ? sel : [0];
+}
+
 function generateReport() {
   saveActiveMedium();
   const refName = $("ref_name").value || "Producto de Referencia";
@@ -1850,20 +1901,31 @@ function generateReport() {
   const inst = $("rep_institution").value || "—";
   const code = $("rep_code").value || "—";
   const userObj = $("rep_objective").value.trim();
+  const inclInd = $("rep_include_individual") ? $("rep_include_individual").checked : true;
+  const inclStats = $("rep_include_stats") ? $("rep_include_stats").checked : true;
+  const inclAdv = $("rep_include_advanced") ? $("rep_include_advanced").checked : true;
 
-  const perMedium = state.media.slice(0, state.numMedia).map((m, i) => {
-    // regenerate summary for each medium by loading into live state
-    const oldIdx = state.activeIdx;
+  const selIdx = getSelectedMediaIndices();
+  const numSel = selIdx.length;
+
+  const perMedium = selIdx.map((i) => {
     loadActiveMedium(i);
     const summary = collectCurrentSummary();
-    return { m, summary, index: i };
+    // Also capture raw vessel data for this medium
+    const raw = {
+      ref: state.ref.map(row => row.slice()),
+      test: state.test.map(row => row.slice()),
+      times: state.timePoints.slice(),
+      vessels: state.vessels
+    };
+    return { m: state.media[i], summary, index: i, raw };
   });
-  loadActiveMedium(0); // restore
+  loadActiveMedium(0);
 
-  // Overall verdict
   const perMediumF2ok = perMedium.map(({summary}) => !isNaN(summary.f2) && summary.f2 >= 50 && summary.f2 <= 100);
   const allSimilar = perMediumF2ok.every(x => x);
   const anySimilar = perMediumF2ok.some(x => x);
+  const mediaLabel = (numSel === 1) ? "el medio evaluado" : `los ${numSel} medios evaluados`;
 
   let html = "";
   html += `<div class="doc-header">
@@ -1879,8 +1941,8 @@ function generateReport() {
     html += `<p>${escapeHtml(userObj)}</p>`;
   } else {
     html += `<p>Comparar los perfiles de disolución <i>in vitro</i> del producto de prueba <b>${escapeHtml(testName)}</b>
-    frente al producto de referencia <b>${escapeHtml(refName)}</b> en ${state.numMedia === 1 ? "el medio" : `los ${state.numMedia} medios`} de disolución
-    seleccionado${state.numMedia === 1 ? "" : "s"}, mediante el cálculo del factor de diferencia f<sub>1</sub>, el factor de similitud f<sub>2</sub>
+    frente al producto de referencia <b>${escapeHtml(refName)}</b> en ${numSel === 1 ? "el medio" : `los ${numSel} medios`} de disolución
+    seleccionado${numSel === 1 ? "" : "s"}, mediante el cálculo del factor de diferencia f<sub>1</sub>, el factor de similitud f<sub>2</sub>
     y métodos estadísticos complementarios (BCa Bootstrap f<sub>2</sub>, distancia de Mahalanobis / ACLMD, y prueba T<sup>2</sup>EQ),
     a fin de establecer la comparabilidad requerida por las guías FDA (1997), EMA (2010, 2018) e ICH.</p>`;
   }
@@ -1888,7 +1950,7 @@ function generateReport() {
   html += `<h2>2. Alcance</h2>
   <p>El presente estudio evalúa la similitud de perfiles de disolución únicamente en las condiciones experimentales descritas.
   Sus conclusiones aplican a los lotes específicos analizados y no reemplazan estudios de biodisponibilidad/bioequivalencia
-  cuando estos sean requeridos por la reglamentación. El estudio incluye ${state.numMedia} medio${state.numMedia===1?"":"s"} de disolución,
+  cuando estos sean requeridos por la reglamentación. El reporte incluye ${numSel} medio${numSel===1?"":"s"} de disolución${state.numMedia > numSel ? ` (de un total de ${state.numMedia} configurados en la sesión)` : ""},
   ${state.vessels} unidades (vasos) por producto y ${state.times} tiempos de muestreo por medio.</p>`;
 
   html += `<h2>3. Información de los productos evaluados</h2>
@@ -1915,34 +1977,49 @@ function generateReport() {
 
   html += `<h2>5. Resultados</h2>`;
 
-  perMedium.forEach(({m, summary}, i) => {
+  perMedium.forEach(({m, summary, raw}, ord) => {
+    const i = ord;
     const medName = m.name || `Medio ${i+1}`;
     html += `<h3>5.${i+1}. Medio de disolución: ${escapeHtml(medName)}</h3>`;
     html += `<p><b>Volumen:</b> ${escapeHtml(m.volume||"—")} · <b>Aparato / velocidad:</b> ${escapeHtml(m.apparatus||"—")}</p>`;
 
-    // Table of means
-    html += `<table><tr><th>Tiempo (min)</th>`;
-    summary.times.forEach(t => html += `<th>${t}</th>`);
-    html += `</tr>
-      <tr><th>R̄ (%)</th>${summary.refMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
-      <tr><th>CV R (%)</th>${summary.refCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
-      <tr><th>T̄ (%)</th>${summary.testMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
-      <tr><th>CV T (%)</th>${summary.testCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
-    </table>`;
+    // Individual vessel data
+    if (inclInd) {
+      html += `<p style="margin-top:10px;"><b>Datos individuales — Producto de Referencia (R) [% disuelto]</b></p>`;
+      html += renderVesselTable(raw.ref, raw.times, raw.vessels);
+      html += `<p style="margin-top:10px;"><b>Datos individuales — Producto de Prueba (T) [% disuelto]</b></p>`;
+      html += renderVesselTable(raw.test, raw.times, raw.vessels);
+    }
+
+    // Table of means / stats
+    if (inclStats) {
+      html += `<p style="margin-top:10px;"><b>Estadísticos por tiempo</b></p>`;
+      html += `<table><tr><th>Tiempo (min)</th>`;
+      summary.times.forEach(t => html += `<th>${t}</th>`);
+      html += `</tr>
+        <tr><th>R̄ (%)</th>${summary.refMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
+        <tr><th>CV R (%)</th>${summary.refCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
+        <tr><th>T̄ (%)</th>${summary.testMeans.map(v => `<td>${fmtNum(v)}</td>`).join("")}</tr>
+        <tr><th>CV T (%)</th>${summary.testCVs.map(v => `<td>${fmtNum(v,1)}</td>`).join("")}</tr>
+      </table>`;
+    }
 
     // Results per method
     const rows = [];
     if (!isNaN(summary.f1)) rows.push(["f<sub>1</sub>", fmtNum(summary.f1), "0 ≤ f<sub>1</sub> ≤ 15", summary.f1 <= 15]);
     if (!isNaN(summary.f2)) rows.push(["f<sub>2</sub>", fmtNum(summary.f2), "50 ≤ f<sub>2</sub> ≤ 100", summary.f2 >= 50 && summary.f2 <= 100]);
-    if (summary.bca) rows.push(["BCa Bootstrap f<sub>2</sub> — LCL", fmtNum(summary.bca.lcl),
-      `LCL(${(100*(1-summary.bca.alpha)).toFixed(0)}%) ≥ 50`, summary.bca.lcl >= 50]);
-    if (summary.msd) rows.push([`MSD (Mahalanobis, δ=${summary.msd.delta}%) — UCL D<sub>M</sub>`,
-      fmtNum(summary.msd.DM_ucl,3), `UCL ≤ D<sub>M,máx</sub> = ${fmtNum(summary.msd.DMmax,3)}`,
-      summary.msd.DM_ucl <= summary.msd.DMmax]);
-    if (summary.t2eq) rows.push([`T<sup>2</sup>EQ (δ=${summary.t2eq.delta}%) — p-valor`,
-      summary.t2eq.p < 1e-4 ? summary.t2eq.p.toExponential(2) : summary.t2eq.p.toFixed(4),
-      `p &lt; α = ${summary.t2eq.alpha}`, summary.t2eq.p < summary.t2eq.alpha]);
+    if (inclAdv) {
+      if (summary.bca) rows.push(["BCa Bootstrap f<sub>2</sub> — LCL", fmtNum(summary.bca.lcl),
+        `LCL(${(100*(1-summary.bca.alpha)).toFixed(0)}%) ≥ 50`, summary.bca.lcl >= 50]);
+      if (summary.msd) rows.push([`MSD (Mahalanobis, δ=${summary.msd.delta}%) — UCL D<sub>M</sub>`,
+        fmtNum(summary.msd.DM_ucl,3), `UCL ≤ D<sub>M,máx</sub> = ${fmtNum(summary.msd.DMmax,3)}`,
+        summary.msd.DM_ucl <= summary.msd.DMmax]);
+      if (summary.t2eq) rows.push([`T<sup>2</sup>EQ (δ=${summary.t2eq.delta}%) — p-valor`,
+        summary.t2eq.p < 1e-4 ? summary.t2eq.p.toExponential(2) : summary.t2eq.p.toFixed(4),
+        `p &lt; α = ${summary.t2eq.alpha}`, summary.t2eq.p < summary.t2eq.alpha]);
+    }
 
+    html += `<p style="margin-top:10px;"><b>Resultados de los métodos aplicados</b></p>`;
     html += `<table>
       <tr><th>Método</th><th>Resultado</th><th>Criterio</th><th>Conclusión</th></tr>`;
     rows.forEach(r => {
@@ -1968,7 +2045,7 @@ function generateReport() {
 
   html += `<h2>6. Conclusiones globales</h2>
   <div class="conclusion-box">`;
-  if (state.numMedia === 1) {
+  if (numSel === 1) {
     const s = perMedium[0].summary;
     if (isNaN(s.f2)) {
       html += `<p>No fue posible concluir por datos insuficientes.</p>`;
@@ -1979,13 +2056,13 @@ function generateReport() {
     }
   } else {
     if (allSimilar) {
-      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> presenta perfiles de disolución <b>similares</b> al producto de referencia <b>${escapeHtml(refName)}</b> en <b>todos</b> los ${state.numMedia} medios evaluados, cumpliendo el criterio 50 ≤ f<sub>2</sub> ≤ 100 en cada uno.</p>`;
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> presenta perfiles de disolución <b>similares</b> al producto de referencia <b>${escapeHtml(refName)}</b> en <b>todos</b> los ${numSel} medios evaluados, cumpliendo el criterio 50 ≤ f<sub>2</sub> ≤ 100 en cada uno.</p>`;
     } else if (anySimilar) {
       const okList = perMedium.filter((_,i) => perMediumF2ok[i]).map(p => p.m.name || `Medio ${p.index+1}`);
       const badList = perMedium.filter((_,i) => !perMediumF2ok[i]).map(p => p.m.name || `Medio ${p.index+1}`);
       html += `<p>La similitud entre <b>${escapeHtml(testName)}</b> y <b>${escapeHtml(refName)}</b> se cumple <b>parcialmente</b>: los perfiles son similares en ${okList.map(x => `<i>${escapeHtml(x)}</i>`).join(", ")}, pero <b>NO</b> en ${badList.map(x => `<i>${escapeHtml(x)}</i>`).join(", ")}. Se requiere justificación técnica adicional para la comparabilidad global.</p>`;
     } else {
-      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> <b>NO cumple</b> el criterio de similitud (f<sub>2</sub> ≥ 50) en ninguno de los ${state.numMedia} medios evaluados.</p>`;
+      html += `<p>El producto de prueba <b>${escapeHtml(testName)}</b> <b>NO cumple</b> el criterio de similitud (f<sub>2</sub> ≥ 50) en ninguno de los ${numSel} medios evaluados.</p>`;
     }
   }
   html += `</div>`;
@@ -2019,21 +2096,111 @@ function generateReport() {
 function escapeHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
-function printReport() {
-  const out = $("report_output");
-  if (!out || out.style.display === "none" || !out.innerHTML) {
-    generateReport();
+function renderVesselTable(data, times, vessels) {
+  // data[t][v] : % dissolved at time t, vessel v
+  let html = `<table style="font-size: 11.5px;"><thead><tr><th>Vaso</th>`;
+  times.forEach(t => html += `<th>t = ${t} min</th>`);
+  html += `</tr></thead><tbody>`;
+  for (let j = 0; j < vessels; j++) {
+    html += `<tr><td style="text-align:center; background:#f4f7fb; font-weight:600;">${j+1}</td>`;
+    for (let i = 0; i < times.length; i++) {
+      const v = data[i] && data[i][j];
+      html += `<td style="text-align:center;">${v == null || isNaN(v) ? "—" : Number(v).toFixed(2)}</td>`;
+    }
+    html += `</tr>`;
   }
-  setTimeout(() => window.print(), 300);
+  // stats footer
+  const meansRow = times.map((_, i) => {
+    const col = (data[i] || []).filter(v => v != null && !isNaN(v));
+    if (col.length === 0) return "—";
+    return (col.reduce((a,b) => a+b, 0) / col.length).toFixed(2);
+  });
+  const sdRow = times.map((_, i) => {
+    const col = (data[i] || []).filter(v => v != null && !isNaN(v));
+    if (col.length < 2) return "—";
+    const mean = col.reduce((a,b) => a+b, 0) / col.length;
+    const varSum = col.reduce((a,b) => a + (b-mean)*(b-mean), 0) / (col.length-1);
+    return Math.sqrt(varSum).toFixed(2);
+  });
+  const cvRow = times.map((_, i) => {
+    const col = (data[i] || []).filter(v => v != null && !isNaN(v));
+    if (col.length < 2) return "—";
+    const mean = col.reduce((a,b) => a+b, 0) / col.length;
+    if (mean === 0) return "—";
+    const varSum = col.reduce((a,b) => a + (b-mean)*(b-mean), 0) / (col.length-1);
+    return (Math.sqrt(varSum) / mean * 100).toFixed(1);
+  });
+  html += `<tr style="background:#eef2f7; font-weight:600;"><td>Media</td>${meansRow.map(v => `<td style="text-align:center;">${v}</td>`).join("")}</tr>`;
+  html += `<tr style="background:#eef2f7;"><td>DE</td>${sdRow.map(v => `<td style="text-align:center;">${v}</td>`).join("")}</tr>`;
+  html += `<tr style="background:#eef2f7;"><td>CV (%)</td>${cvRow.map(v => `<td style="text-align:center;">${v}</td>`).join("")}</tr>`;
+  html += `</tbody></table>`;
+  return html;
+}
+
+function getReportStyles() {
+  return `
+    body { font-family: "Times New Roman", Georgia, serif; color: #000; line-height: 1.5; font-size: 13px; margin: 24px; }
+    h1, h2, h3 { font-family: -apple-system, "Segoe UI", sans-serif; color: #0b3860; }
+    h1 { font-size: 22px; border-bottom: 2px solid #0b3860; padding-bottom: 6px; margin: 0 0 6px; }
+    h2 { font-size: 17px; margin-top: 22px; border-left: 4px solid #0b3860; padding-left: 10px; }
+    h3 { font-size: 14px; margin-top: 14px; color: #0b5cad; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12.5px; font-family: -apple-system, "Segoe UI", sans-serif; }
+    th, td { border: 1px solid #888; padding: 4px 6px; }
+    th { background: #eef2f7; }
+    .doc-header { text-align: center; margin-bottom: 18px; }
+    .doc-meta { font-size: 11.5px; color: #555; text-align: center; }
+    .conclusion-box { border: 2px solid #0b3860; padding: 12px; border-radius: 4px; background: #f5f9fd; margin-top: 10px; }
+    .badge-ok { display: inline-block; padding: 2px 8px; background: #d6f0e2; color: #0e6a48; font-size: 11px; border-radius: 8px; font-weight: 700; }
+    .badge-bad { display: inline-block; padding: 2px 8px; background: #fadfd2; color: #9c2f08; font-size: 11px; border-radius: 8px; font-weight: 700; }
+    p { margin: 5px 0 8px; }
+    ol, ul { padding-left: 22px; }
+    @page { margin: 1.5cm; }
+  `;
+}
+function ensureReportGenerated() {
+  const out = $("report_output");
+  if (!out || out.style.display === "none" || !out.innerHTML) generateReport();
+}
+function printReport() {
+  ensureReportGenerated();
+  const body = $("report_output").innerHTML;
+  const win = window.open("", "_blank", "width=1000,height=800");
+  if (!win) { alert("Habilite las ventanas emergentes para imprimir el reporte."); return; }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><style>${getReportStyles()}</style></head><body>${body}<script>window.onload=function(){setTimeout(function(){window.print();},300);};</` + `script></body></html>`);
+  win.document.close();
+}
+function exportReportAsHtml() {
+  ensureReportGenerated();
+  const body = $("report_output").innerHTML;
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><style>${getReportStyles()}</style></head><body>${body}</body></html>`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `reporte_disolucion_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportReportAsWord() {
+  ensureReportGenerated();
+  const body = $("report_output").innerHTML;
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Reporte de Perfiles de Disolución</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--><style>${getReportStyles()}</style></head><body>${body}</body></html>`;
+  const blob = new Blob(["﻿", html], { type: "application/msword" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `reporte_disolucion_${new Date().toISOString().slice(0,10)}.doc`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 window.addEventListener("resize", () => drawChart(computeStats("ref"), computeStats("test")));
 
 // initial
-rebuildMedia();          // creates state.media[0] with defaults
-rebuildTables();         // sync structure across media, alias live to media[0]
-loadActiveMedium(0);     // load identity fields (name, vol, apparatus) from media[0]
+rebuildMedia();
+rebuildTables();
+loadActiveMedium(0);
 renderMediumTabs();
+renderMediumSelector();
 
 </script>
 </body>
