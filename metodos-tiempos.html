@@ -186,6 +186,10 @@
     <h3>Paso 4B. Pasos para el analisis</h3>
     <p class="lede" id="stepsHint">Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.</p>
     <div id="stepsList" class="steps-list"></div>
+    <div id="manualStepBox" class="hidden" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="text" id="fManualStep" maxlength="120" placeholder="Descripcion del paso adicional (ej: Repeticion por descarte)" style="flex:1; min-width:260px;">
+      <button id="addManualStepBtn" type="button">+ Anadir paso manual</button>
+    </div>
 
     <h2>Paso 5. Registro de tiempos</h2>
     <div style="overflow-x:auto;">
@@ -804,26 +808,56 @@ function renderStepsList(analysis) {
   const container = $("stepsList");
   container.textContent = "";
   const hint = $("stepsHint");
+  const manualBox = $("manualStepBox");
   if (!analysis) {
     hint.textContent = "Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.";
+    manualBox.classList.add("hidden");
     return;
   }
   const steps = STEPS_BY_ANALYSIS[analysis] || PASOS_GENERICOS;
-  hint.textContent = "Marque cada paso a medida que lo vaya a realizar. Cada marca agrega una fila al Paso 5.";
-  steps.forEach((step, idx) => {
-    const label = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.dataset.step = step;
-    cb.dataset.idx = String(idx);
-    cb.addEventListener("change", () => onStepToggle(cb));
-    const span = document.createElement("span");
-    span.textContent = step;
-    label.appendChild(cb);
-    label.appendChild(span);
-    container.appendChild(label);
-  });
+  hint.textContent = "Marque cada paso a medida que lo vaya a realizar. Cada marca agrega una fila al Paso 5. Si durante el analisis nota que falto un paso, use el boton \"Anadir paso manual\".";
+  manualBox.classList.remove("hidden");
+  steps.forEach((step, idx) => appendStepCheckbox(container, step, idx, false));
 }
+
+function appendStepCheckbox(container, step, idx, prechecked) {
+  const label = document.createElement("label");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.dataset.step = step;
+  cb.dataset.idx = String(idx);
+  cb.checked = !!prechecked;
+  cb.addEventListener("change", () => onStepToggle(cb));
+  const span = document.createElement("span");
+  span.textContent = step;
+  label.appendChild(cb);
+  label.appendChild(span);
+  container.appendChild(label);
+  return cb;
+}
+
+// Boton "Anadir paso manual" del Paso 4B
+$("addManualStepBtn").addEventListener("click", () => {
+  const inp = $("fManualStep");
+  const text = (inp.value || "").trim();
+  if (!text) { inp.focus(); return; }
+  // Evitar duplicar exactamente el mismo texto ya presente como checkbox
+  const container = $("stepsList");
+  const existing = Array.from(container.querySelectorAll('input[type=checkbox]'))
+    .some(cb => cb.dataset.step === text);
+  if (existing) {
+    alert("Ya existe un paso con esa descripcion en la lista.");
+    return;
+  }
+  const cb = appendStepCheckbox(container, text, container.children.length, true);
+  onStepToggle(cb); // agrega la fila al Paso 5 inmediatamente
+  inp.value = "";
+  inp.focus();
+});
+
+$("fManualStep").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); $("addManualStepBtn").click(); }
+});
 
 function onStepToggle(cb) {
   const step = cb.dataset.step;
