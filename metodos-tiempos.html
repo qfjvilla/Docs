@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; form-action 'none';">
 <meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no">
 <title>Registro de Metodos y Tiempos - Laboratorio</title>
 <style>
   :root { color-scheme: light dark; --bg:#fafbfc; --card:#fff; --border:#d0d4dc; --accent:#1f5fbf; --danger:#b00020; --ok:#0a7d2b; --muted:#5a6070; }
@@ -51,6 +53,14 @@
   .actions-final { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   .req::after { content: " *"; color: var(--danger); }
   .fixed-badge { display: inline-block; padding: 4px 10px; background: var(--ok); color: #fff; font-size: 12px; font-weight: 600; border-radius: 6px; }
+  /* Mobile: 16px inputs para evitar el auto-zoom de iOS Safari */
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    input[type=text], input[type=number], select, textarea { font-size: 16px; }
+    button { min-height: 40px; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -68,7 +78,7 @@
     </div>
   </section>
 
-  <section class="card hidden" id="formCard">
+  <section class="card hidden" id="formCard" autocomplete="off">
     <h2>Paso 1. Informacion del producto</h2>
     <div class="grid">
       <div><label class="req" for="fProducto">Nombre del producto</label><input type="text" id="fProducto" maxlength="120"></div>
