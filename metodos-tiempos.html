@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+<meta name="referrer" content="no-referrer">
+<title>Registro de Metodos y Tiempos - Laboratorio</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fafbfc; --card:#fff; --border:#d0d4dc; --accent:#1f5fbf; --danger:#b00020; --ok:#0a7d2b; --muted:#5a6070; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141821; --card:#1c2230; --border:#2f3644; --accent:#5fa8ff; --danger:#ff6b7f; --ok:#5ad07a; --muted:#a0a7b8; color:#e6e9ef; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 20px; background: var(--bg); max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 17px; margin: 18px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .lede { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+  input[type=text], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--card); color: inherit; font-family: inherit; }
+  input[disabled], select[disabled] { background: rgba(128,128,128,0.12); cursor: not-allowed; }
+  textarea { min-height: 60px; resize: vertical; }
+  button { padding: 9px 16px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button.danger { background: var(--danger); border-color: var(--danger); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .fix-line { display: flex; align-items: center; gap: 8px; }
+  .fix-line input[type=text] { flex: 1; }
+  .fix-line label.check { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: rgba(31,95,191,0.08); font-weight: 600; }
+  td.time-cell { min-width: 175px; }
+  td.time-cell .fix-line input { font-size: 12px; padding: 5px 7px; }
+  td.min-cell { text-align: right; font-variant-numeric: tabular-nums; }
+  .steps-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; margin-top: 8px; }
+  .steps-list label { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; color: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--card); }
+  .steps-list label:hover { border-color: var(--accent); }
+  .steps-list input[type=checkbox] { margin-top: 2px; }
+  .steps-list label.disabled { opacity: 0.6; cursor: not-allowed; }
+  .status { padding: 10px 14px; border-radius: 6px; margin-top: 12px; font-size: 14px; display: none; }
+  .status.ok  { background: rgba(10,125,43,0.12); color: var(--ok); border: 1px solid var(--ok); display: block; }
+  .status.err { background: rgba(176,0,32,0.12); color: var(--danger); border: 1px solid var(--danger); display: block; }
+  .folder-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .folder-name { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); word-break: break-all; }
+  .hidden { display: none !important; }
+  .warn-box { padding: 8px 12px; background: rgba(255,180,0,0.15); border: 1px solid #d0a000; border-radius: 6px; font-size: 12px; color: inherit; margin-top: 8px; }
+  .actions-final { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .req::after { content: " *"; color: var(--danger); }
+</style>
+</head>
+<body>
+  <h1>Registro de Metodos y Tiempos</h1>
+  <p class="lede">Aplicacion local para el registro de tiempos de analisis en laboratorio. Funciona 100% offline; no realiza ninguna peticion de red.</p>
+
+  <section class="card" id="folderCard">
+    <h2>Paso 0. Carpeta de destino</h2>
+    <div class="folder-line">
+      <button id="pickFolderBtn" type="button">Seleccionar carpeta</button>
+      <span id="folderName" class="folder-name">Ninguna carpeta seleccionada.</span>
+    </div>
+    <div id="folderFallback" class="warn-box hidden">
+      Su navegador no permite seleccionar una carpeta desde un archivo local. Al guardar, el navegador solicitara donde descargar el archivo TXT (por defecto la carpeta de Descargas). Para habilitar la seleccion directa, abra este archivo desde un servidor local (por ejemplo <code>python -m http.server</code>) usando un navegador basado en Chromium.
+    </div>
+  </section>
+
+  <section class="card hidden" id="formCard">
+    <h2>Paso 1. Informacion del producto</h2>
+    <div class="grid">
+      <div><label class="req" for="fProducto">Nombre del producto</label><input type="text" id="fProducto" maxlength="120"></div>
+      <div><label class="req" for="fCodigo">Codigo</label><input type="text" id="fCodigo" maxlength="60"></div>
+      <div><label class="req" for="fLote">Lote</label><input type="text" id="fLote" maxlength="60"></div>
+      <div><label class="req" for="fEmpaque">Empaque</label><input type="text" id="fEmpaque" maxlength="120"></div>
+      <div>
+        <label class="req" for="fTipoMuestra">Tipo de muestra</label>
+        <select id="fTipoMuestra">
+          <option value="">Seleccione...</option>
+          <option value="proceso">Proceso</option>
+          <option value="materia_prima">Materia prima</option>
+          <option value="limpieza">Limpieza</option>
+          <option value="producto_terminado">Producto terminado</option>
+        </select>
+      </div>
+      <div id="formaFarmBox" class="hidden">
+        <label class="req" for="fFormaFarm">Forma farmaceutica</label>
+        <input type="text" id="fFormaFarm" maxlength="120" placeholder="Ej: Tableta, capsula, jarabe...">
+      </div>
+    </div>
+
+    <h2>Paso 2. Datos del analista</h2>
+    <div class="grid">
+      <div><label class="req" for="fAnalista">Nombre del analista</label><input type="text" id="fAnalista" maxlength="120"></div>
+      <div><label class="req" for="fCargo">Cargo</label><input type="text" id="fCargo" maxlength="80"></div>
+      <div>
+        <label class="req" for="fTurno">Turno</label>
+        <select id="fTurno">
+          <option value="">Seleccione...</option>
+          <option>Manana</option>
+          <option>Tarde</option>
+          <option>Noche</option>
+          <option>Unico</option>
+        </select>
+      </div>
+    </div>
+
+    <h2>Paso 3. Fecha y hora de inicio</h2>
+    <div class="fix-line">
+      <input type="text" id="fFechaHora" disabled>
+      <label class="check"><input type="checkbox" id="fFechaHoraFix"> Fijar</label>
+    </div>
+
+    <h2>Paso 4. Pasos del analisis</h2>
+    <p class="lede" id="stepsHint">Seleccione primero un tipo de muestra en el Paso 1 para ver los pasos disponibles.</p>
+    <div id="stepsList" class="steps-list"></div>
+
+    <h2>Paso 5. Registro de tiempos</h2>
+    <div style="overflow-x:auto;">
+      <table id="timesTable">
+        <thead>
+          <tr>
+            <th>Descripcion del paso</th>
+            <th>Hora inicial</th>
+            <th>Hora final</th>
+            <th>Tiempo (min)</th>
+            <th>Comentarios</th>
+          </tr>
+        </thead>
+        <tbody id="timesTBody">
+          <tr><td colspan="5" style="text-align:center; color:var(--muted);">Marque pasos en el Paso 4 para agregarlos aqui.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Paso 6. Finalizar analisis</h2>
+    <div class="actions-final">
+      <button id="finishBtn" type="button">Finalizar analisis y guardar</button>
+      <button id="resetBtn" type="button" class="ghost">Reiniciar formulario</button>
+    </div>
+    <div id="statusMsg" class="status"></div>
+  </section>
+
+<script>
+"use strict";
+
+// --- Catalogo de pasos por tipo de muestra ---
+const STEPS_BY_TYPE = {
+  proceso: [
+    "Verificacion de identidad de la muestra",
+    "Registro de la muestra en sistema/cuaderno",
+    "Preparacion de la muestra",
+    "Ejecucion del ensayo fisicoquimico",
+    "Calculo de resultados",
+    "Comparacion contra especificacion",
+    "Documentacion y archivo de datos"
+  ],
+  materia_prima: [
+    "Recepcion de la muestra y documentacion",
+    "Verificacion de rotulado y trazabilidad",
+    "Inspeccion visual y organoleptica",
+    "Identificacion (IR / HPLC / otro)",
+    "Valoracion (assay)",
+    "Determinacion de impurezas relacionadas",
+    "Perdida por secado / Karl Fischer",
+    "Cenizas o residuos",
+    "Emision del certificado de analisis"
+  ],
+  limpieza: [
+    "Verificacion del estado del area/equipo",
+    "Toma de muestra por hisopado",
+    "Toma de muestra por enjuague",
+    "Preparacion de las muestras",
+    "Analisis por TOC / conductividad",
+    "Analisis HPLC de trazas",
+    "Calculo del residuo vs limite aceptable",
+    "Registro y liberacion del equipo"
+  ],
+  producto_terminado: [
+    "Verificacion de identidad y lote",
+    "Descripcion organoleptica",
+    "Identificacion del principio activo",
+    "Valoracion (assay)",
+    "Uniformidad de contenido / masa",
+    "Ensayo de disolucion",
+    "Impurezas y productos de degradacion",
+    "Ensayos microbiologicos",
+    "Verificacion del material de empaque",
+    "Emision del certificado de analisis"
+  ]
+};
+
+// --- Estado ---
+const state = {
+  folderHandle: null,
+  folderLabel: "",
+  rows: []  // { id, step, startISO, startFixed, endISO, endFixed, comment }
+};
+
+// --- Utilidades seguras ---
+function $(id) { return document.getElementById(id); }
+function pad(n) { return String(n).padStart(2, "0"); }
+function nowLocal() {
+  const d = new Date();
+  return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate())
+       + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+}
+function parseLocal(str) {
+  // "YYYY-MM-DD HH:MM:SS" -> Date
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(str);
+  if (!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+}
+// Sanitiza cualquier fragmento que se inserte en el nombre de archivo.
+// Elimina separadores de ruta, caracteres de control, reservados de Windows.
+function sanitizeForFilename(s) {
+  if (!s) return "";
+  return String(s)
+    .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 60);
+}
+function reservedWinName(n) {
+  return /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i.test(n);
+}
+function setStatus(msg, kind) {
+  const el = $("statusMsg");
+  el.textContent = msg;
+  el.className = "status " + (kind === "ok" ? "ok" : "err");
+}
+function clearStatus() {
+  const el = $("statusMsg");
+  el.textContent = "";
+  el.className = "status";
+}
+
+// --- Paso 0. Carpeta ---
+$("pickFolderBtn").addEventListener("click", async () => {
+  if (typeof window.showDirectoryPicker !== "function") {
+    $("folderFallback").classList.remove("hidden");
+    state.folderHandle = null;
+    state.folderLabel = "(Se usara la carpeta de Descargas del navegador)";
+    $("folderName").textContent = state.folderLabel;
+    $("formCard").classList.remove("hidden");
+    initFechaHora();
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+    state.folderHandle = handle;
+    state.folderLabel = handle.name || "(carpeta seleccionada)";
+    $("folderName").textContent = "Carpeta: " + state.folderLabel;
+    $("folderFallback").classList.add("hidden");
+    $("formCard").classList.remove("hidden");
+    initFechaHora();
+  } catch (e) {
+    if (e && e.name !== "AbortError") {
+      $("folderName").textContent = "No se pudo abrir el selector de carpeta.";
+    }
+  }
+});
+
+// --- Paso 1. Tipo de muestra ---
+$("fTipoMuestra").addEventListener("change", (ev) => {
+  const val = ev.target.value;
+  $("formaFarmBox").classList.toggle("hidden", val !== "producto_terminado");
+  if (val !== "producto_terminado") $("fFormaFarm").value = "";
+  renderStepsList(val);
+});
+
+function renderStepsList(type) {
+  const container = $("stepsList");
+  container.textContent = "";
+  const hint = $("stepsHint");
+  const steps = STEPS_BY_TYPE[type];
+  if (!steps) {
+    hint.textContent = "Seleccione primero un tipo de muestra en el Paso 1 para ver los pasos disponibles.";
+    // Limpiar filas existentes (si el usuario cambia el tipo despues)
+    state.rows = [];
+    renderTimesTable();
+    return;
+  }
+  hint.textContent = "Marque cada paso a medida que lo va a realizar. Cada marca agrega una fila al Paso 5.";
+  steps.forEach((step, idx) => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.dataset.step = step;
+    cb.dataset.idx = String(idx);
+    cb.addEventListener("change", () => onStepToggle(cb));
+    const span = document.createElement("span");
+    span.textContent = step;
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+  // Al cambiar de tipo se limpia la tabla de tiempos.
+  state.rows = [];
+  renderTimesTable();
+}
+
+function onStepToggle(cb) {
+  const step = cb.dataset.step;
+  if (cb.checked) {
+    const row = {
+      id: "r" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+      step: step,
+      startISO: nowLocal(),
+      startFixed: false,
+      endISO: nowLocal(),
+      endFixed: false,
+      comment: ""
+    };
+    state.rows.push(row);
+  } else {
+    // Solo permitir des-marcar si la fila NO tiene horas fijadas.
+    const idx = state.rows.findIndex(r => r.step === step && !(r.startFixed || r.endFixed));
+    if (idx === -1) {
+      cb.checked = true;
+      alert("Este paso ya tiene horas fijadas; no puede eliminarse del registro.");
+      return;
+    }
+    state.rows.splice(idx, 1);
+  }
+  renderTimesTable();
+}
+
+// --- Paso 3. Fecha y hora inicial ---
+let fechaHoraTimer = null;
+function initFechaHora() {
+  const inp = $("fFechaHora");
+  const cb = $("fFechaHoraFix");
+  if (!cb.checked) inp.value = nowLocal();
+  if (fechaHoraTimer) clearInterval(fechaHoraTimer);
+  fechaHoraTimer = setInterval(() => {
+    if (!$("fFechaHoraFix").checked) $("fFechaHora").value = nowLocal();
+  }, 1000);
+  cb.addEventListener("change", () => {
+    if (cb.checked) {
+      inp.value = nowLocal();
+    }
+  }, { once: false });
+}
+
+// --- Paso 5. Tabla de tiempos ---
+function renderTimesTable() {
+  const tbody = $("timesTBody");
+  tbody.textContent = "";
+  if (state.rows.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 5;
+    td.style.textAlign = "center";
+    td.style.color = "var(--muted)";
+    td.textContent = "Marque pasos en el Paso 4 para agregarlos aqui.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  state.rows.forEach(row => tbody.appendChild(renderRow(row)));
+}
+
+function renderRow(row) {
+  const tr = document.createElement("tr");
+  tr.dataset.id = row.id;
+
+  const tdStep = document.createElement("td");
+  tdStep.textContent = row.step;
+  tr.appendChild(tdStep);
+
+  tr.appendChild(makeTimeCell(row, "start"));
+  tr.appendChild(makeTimeCell(row, "end"));
+
+  const tdMin = document.createElement("td");
+  tdMin.className = "min-cell";
+  tdMin.textContent = computeMinutes(row);
+  tr.appendChild(tdMin);
+
+  const tdCom = document.createElement("td");
+  const ta = document.createElement("textarea");
+  ta.rows = 2;
+  ta.maxLength = 500;
+  ta.value = row.comment;
+  ta.addEventListener("input", () => { row.comment = ta.value; });
+  tdCom.appendChild(ta);
+  tr.appendChild(tdCom);
+
+  return tr;
+}
+
+function makeTimeCell(row, which) {
+  const td = document.createElement("td");
+  td.className = "time-cell";
+  const wrap = document.createElement("div");
+  wrap.className = "fix-line";
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.disabled = true;
+  const key = which === "start" ? "startISO" : "endISO";
+  const fixedKey = which === "start" ? "startFixed" : "endFixed";
+  inp.value = row[key];
+  const lbl = document.createElement("label");
+  lbl.className = "check";
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = row[fixedKey];
+  cb.disabled = row[fixedKey]; // una vez fijado no se puede desmarcar
+  cb.addEventListener("change", () => {
+    if (cb.checked) {
+      row[key] = nowLocal();
+      row[fixedKey] = true;
+      inp.value = row[key];
+      cb.disabled = true;
+      // Refrescar minutos y bloquear ambos en la fila si aplica.
+      refreshRowMinutes(row);
+    }
+  });
+  const span = document.createElement("span");
+  span.textContent = "Fijar";
+  lbl.appendChild(cb);
+  lbl.appendChild(span);
+  wrap.appendChild(inp);
+  wrap.appendChild(lbl);
+  td.appendChild(wrap);
+
+  // Si aun no esta fijado, actualiza cada segundo con la hora actual.
+  if (!row[fixedKey]) {
+    const timer = setInterval(() => {
+      if (row[fixedKey]) { clearInterval(timer); return; }
+      row[key] = nowLocal();
+      inp.value = row[key];
+    }, 1000);
+  }
+  return td;
+}
+
+function computeMinutes(row) {
+  if (!(row.startFixed && row.endFixed)) return "-";
+  const s = parseLocal(row.startISO);
+  const e = parseLocal(row.endISO);
+  if (!s || !e) return "-";
+  const diffMs = e.getTime() - s.getTime();
+  if (diffMs < 0) return "invalido";
+  return (diffMs / 60000).toFixed(2);
+}
+
+function refreshRowMinutes(row) {
+  const tr = document.querySelector('tr[data-id="' + row.id + '"]');
+  if (!tr) return;
+  const minCell = tr.children[3];
+  if (minCell) minCell.textContent = computeMinutes(row);
+}
+
+// --- Paso 6. Finalizar ---
+$("finishBtn").addEventListener("click", async () => {
+  clearStatus();
+  const errs = validate();
+  if (errs.length) {
+    setStatus("Aun faltan datos, asegurese de diligenciar todos los espacios requeridos antes de finalizar el analisis.\n- " + errs.join("\n- "), "err");
+    return;
+  }
+  const txt = buildReport();
+  const filename = buildFilename();
+  try {
+    await saveFile(filename, txt);
+    setStatus("El archivo fue guardado con exito: " + filename, "ok");
+  } catch (e) {
+    setStatus("No se pudo guardar el archivo: " + (e && e.message ? e.message : String(e)), "err");
+  }
+});
+
+$("resetBtn").addEventListener("click", () => {
+  if (!confirm("Se perderan todos los datos del registro actual. Continuar?")) return;
+  location.reload();
+});
+
+function validate() {
+  const errs = [];
+  const req = [
+    ["fProducto", "Nombre del producto"],
+    ["fCodigo", "Codigo"],
+    ["fLote", "Lote"],
+    ["fEmpaque", "Empaque"],
+    ["fTipoMuestra", "Tipo de muestra"],
+    ["fAnalista", "Nombre del analista"],
+    ["fCargo", "Cargo"],
+    ["fTurno", "Turno"]
+  ];
+  req.forEach(([id, label]) => {
+    if (!$(id).value.trim()) errs.push(label);
+  });
+  if ($("fTipoMuestra").value === "producto_terminado" && !$("fFormaFarm").value.trim()) {
+    errs.push("Forma farmaceutica");
+  }
+  if (!$("fFechaHoraFix").checked) errs.push("Fijar la fecha y hora del Paso 3");
+  if (state.rows.length === 0) errs.push("Al menos un paso del analisis (Paso 4)");
+  state.rows.forEach((r, i) => {
+    if (!r.startFixed) errs.push("Fijar hora inicial del paso " + (i+1) + " (" + r.step + ")");
+    if (!r.endFixed)   errs.push("Fijar hora final del paso " + (i+1) + " (" + r.step + ")");
+    if (r.startFixed && r.endFixed) {
+      const s = parseLocal(r.startISO); const e = parseLocal(r.endISO);
+      if (s && e && e.getTime() < s.getTime()) {
+        errs.push("La hora final es anterior a la inicial en el paso " + (i+1));
+      }
+    }
+  });
+  return errs;
+}
+
+function buildFilename() {
+  const parts = [
+    sanitizeForFilename($("fProducto").value),
+    sanitizeForFilename($("fCodigo").value),
+    sanitizeForFilename($("fLote").value),
+    nowLocal().replace(/[: ]/g, "-")
+  ].filter(Boolean);
+  let base = parts.join("_");
+  if (!base || reservedWinName(base)) base = "registro_" + Date.now();
+  return base.slice(0, 150) + ".txt";
+}
+
+function buildReport() {
+  const L = [];
+  L.push("REGISTRO DE METODOS Y TIEMPOS");
+  L.push("Generado: " + nowLocal());
+  L.push("=".repeat(60));
+  L.push("");
+  L.push("[Producto]");
+  L.push("  Nombre         : " + $("fProducto").value.trim());
+  L.push("  Codigo         : " + $("fCodigo").value.trim());
+  L.push("  Lote           : " + $("fLote").value.trim());
+  L.push("  Empaque        : " + $("fEmpaque").value.trim());
+  const tipo = $("fTipoMuestra").options[$("fTipoMuestra").selectedIndex].text;
+  L.push("  Tipo de muestra: " + tipo);
+  if ($("fTipoMuestra").value === "producto_terminado") {
+    L.push("  Forma farmac.  : " + $("fFormaFarm").value.trim());
+  }
+  L.push("");
+  L.push("[Analista]");
+  L.push("  Nombre : " + $("fAnalista").value.trim());
+  L.push("  Cargo  : " + $("fCargo").value.trim());
+  L.push("  Turno  : " + $("fTurno").value.trim());
+  L.push("");
+  L.push("[Inicio del analisis]");
+  L.push("  Fecha y hora fija: " + $("fFechaHora").value);
+  L.push("");
+  L.push("[Tiempos por paso]");
+  const header = ["#", "Descripcion", "Hora inicial", "Hora final", "Min", "Comentarios"];
+  const rows = state.rows.map((r, i) => [
+    String(i+1), r.step, r.startISO, r.endISO, computeMinutes(r), (r.comment || "").replace(/\s+/g, " ").trim()
+  ]);
+  L.push(formatTable(header, rows));
+  // Total acumulado
+  const total = state.rows.reduce((acc, r) => {
+    const m = parseFloat(computeMinutes(r));
+    return acc + (isNaN(m) ? 0 : m);
+  }, 0);
+  L.push("");
+  L.push("  Tiempo total acumulado: " + total.toFixed(2) + " min");
+  L.push("");
+  L.push("=".repeat(60));
+  L.push("Fin del registro.");
+  return L.join("\n");
+}
+
+function formatTable(header, rows) {
+  const widths = header.map((h, i) => {
+    let w = h.length;
+    rows.forEach(r => { if ((r[i] || "").length > w) w = r[i].length; });
+    return Math.min(w, 40);
+  });
+  const pad = (s, w) => {
+    s = String(s || "");
+    if (s.length > w) s = s.slice(0, w-1) + "~";
+    return s + " ".repeat(w - s.length);
+  };
+  const sep = "  " + widths.map(w => "-".repeat(w)).join("  ") + "  ";
+  const hdr = "  " + header.map((h,i) => pad(h, widths[i])).join("  ") + "  ";
+  const body = rows.map(r => "  " + r.map((c,i) => pad(c, widths[i])).join("  ") + "  ").join("\n");
+  return [sep, hdr, sep, body, sep].join("\n");
+}
+
+async function saveFile(filename, content) {
+  // Ruta 1: File System Access API (carpeta previamente seleccionada)
+  if (state.folderHandle && typeof state.folderHandle.getFileHandle === "function") {
+    const fh = await state.folderHandle.getFileHandle(filename, { create: true });
+    const w = await fh.createWritable();
+    await w.write(new Blob([content], { type: "text/plain;charset=utf-8" }));
+    await w.close();
+    return;
+  }
+  // Ruta 2: descarga por el navegador
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+</script>
+</body>
+</html>
