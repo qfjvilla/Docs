@@ -185,6 +185,10 @@
 
     <h3>Paso 4B. Pasos para el analisis</h3>
     <p class="lede" id="stepsHint">Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.</p>
+    <div id="stepsBulkBox" class="hidden" style="margin-bottom:8px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button id="checkAllStepsBtn" type="button" class="ghost small">Agregar todos los pasos recomendados</button>
+      <button id="uncheckAllStepsBtn" type="button" class="ghost small">Limpiar seleccion (solo pasos sin hora fijada)</button>
+    </div>
     <div id="stepsList" class="steps-list"></div>
     <div id="manualStepBox" class="hidden" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
       <input type="text" id="fManualStep" maxlength="120" placeholder="Descripcion del paso adicional (ej: Repeticion por descarte)" style="flex:1; min-width:260px;">
@@ -201,20 +205,43 @@
             <th>Hora final</th>
             <th>Tiempo (min)</th>
             <th>Comentarios</th>
+            <th>Accion</th>
           </tr>
         </thead>
         <tbody id="timesTBody">
-          <tr><td colspan="5" style="text-align:center; color:var(--muted);">Marque pasos en el Paso 4B para agregarlos aqui.</td></tr>
+          <tr><td colspan="6" style="text-align:center; color:var(--muted);">Marque pasos en el Paso 4B para agregarlos aqui.</td></tr>
         </tbody>
       </table>
     </div>
 
     <h2>Paso 6. Finalizar analisis</h2>
     <div class="actions-final">
-      <button id="finishBtn" type="button">Finalizar analisis y guardar</button>
-      <button id="resetBtn" type="button" class="ghost">Reiniciar formulario</button>
+      <button id="finalizeBtn" type="button">1. Finalizar analisis</button>
+      <button id="saveBtn" type="button" disabled>2. Guardar archivo</button>
+      <button id="resetBtn" type="button" class="ghost">3. Reiniciar formulario</button>
+    </div>
+    <div id="summaryBox" class="hidden" style="margin-top:14px;">
+      <h3>Resumen del analisis</h3>
+      <div class="grid">
+        <div>
+          <label for="fInicioAnalisis">Hora de inicio del analisis</label>
+          <input type="text" id="fInicioAnalisis" disabled>
+        </div>
+        <div>
+          <label for="fFinAnalisis">Hora final del analisis</label>
+          <input type="text" id="fFinAnalisis" disabled>
+        </div>
+        <div>
+          <label for="fDuracionAnalisis">Duracion total (minutos)</label>
+          <input type="text" id="fDuracionAnalisis" disabled>
+        </div>
+      </div>
     </div>
     <div id="statusMsg" class="status"></div>
+    <div id="previewBox" class="hidden" style="margin-top:14px;">
+      <h3>Archivo generado</h3>
+      <textarea id="previewArea" readonly style="width:100%; min-height:260px; font-family:ui-monospace,Menlo,monospace; font-size:12px;"></textarea>
+    </div>
   </section>
 
 <script>
@@ -809,16 +836,47 @@ function renderStepsList(analysis) {
   container.textContent = "";
   const hint = $("stepsHint");
   const manualBox = $("manualStepBox");
+  const bulkBox = $("stepsBulkBox");
   if (!analysis) {
     hint.textContent = "Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.";
     manualBox.classList.add("hidden");
+    bulkBox.classList.add("hidden");
     return;
   }
   const steps = STEPS_BY_ANALYSIS[analysis] || PASOS_GENERICOS;
-  hint.textContent = "Marque cada paso a medida que lo vaya a realizar. Cada marca agrega una fila al Paso 5. Si durante el analisis nota que falto un paso, use el boton \"Anadir paso manual\".";
+  hint.textContent = "Marque cada paso a medida que lo vaya a realizar. Cada marca agrega una fila al Paso 5. Puede agregar todos de una vez, quitar cualquier fila desde el Paso 5, o anadir pasos manuales.";
   manualBox.classList.remove("hidden");
+  bulkBox.classList.remove("hidden");
   steps.forEach((step, idx) => appendStepCheckbox(container, step, idx, false));
 }
+
+// Encuentra el checkbox de un paso en el listado del 4B (por texto exacto)
+function findStepCheckbox(step) {
+  return Array.from($("stepsList").querySelectorAll('input[type=checkbox]'))
+    .find(cb => cb.dataset.step === step);
+}
+
+// Botones "agregar todos" / "limpiar"
+$("checkAllStepsBtn").addEventListener("click", () => {
+  Array.from($("stepsList").querySelectorAll('input[type=checkbox]')).forEach(cb => {
+    if (!cb.checked) {
+      cb.checked = true;
+      onStepToggle(cb);
+    }
+  });
+  resetFinalizedState();
+});
+$("uncheckAllStepsBtn").addEventListener("click", () => {
+  Array.from($("stepsList").querySelectorAll('input[type=checkbox]')).forEach(cb => {
+    if (!cb.checked) return;
+    // Solo puede desmarcarse si la fila asociada NO tiene horas fijadas
+    const row = state.rows.find(r => r.step === cb.dataset.step);
+    if (row && (row.startFixed || row.endFixed)) return;
+    cb.checked = false;
+    onStepToggle(cb);
+  });
+  resetFinalizedState();
+});
 
 function appendStepCheckbox(container, step, idx, prechecked) {
   const label = document.createElement("label");
@@ -915,7 +973,7 @@ function renderTimesTable() {
   if (state.rows.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.style.textAlign = "center";
     td.style.color = "var(--muted)";
     td.textContent = "Marque pasos en el Paso 4B para agregarlos aqui.";
@@ -951,7 +1009,34 @@ function renderRow(row) {
   tdCom.appendChild(ta);
   tr.appendChild(tdCom);
 
+  const tdAct = document.createElement("td");
+  tdAct.style.textAlign = "center";
+  const del = document.createElement("button");
+  del.type = "button";
+  del.className = "danger small";
+  del.textContent = "Quitar";
+  del.title = "Elimina este paso del registro";
+  del.addEventListener("click", () => deleteRow(row.id));
+  tdAct.appendChild(del);
+  tr.appendChild(tdAct);
+
   return tr;
+}
+
+function deleteRow(rowId) {
+  const idx = state.rows.findIndex(r => r.id === rowId);
+  if (idx === -1) return;
+  const row = state.rows[idx];
+  const hasFixed = row.startFixed || row.endFixed;
+  const msg = hasFixed
+    ? "Este paso ya tiene horas fijadas. Confirma eliminar el paso \"" + row.step + "\" del registro? Esta accion no se puede deshacer."
+    : "Eliminar el paso \"" + row.step + "\" del registro?";
+  if (!confirm(msg)) return;
+  state.rows.splice(idx, 1);
+  const cb = findStepCheckbox(row.step);
+  if (cb) cb.checked = false;
+  renderTimesTable();
+  resetFinalizedState();
 }
 
 function makeTimeCell(row, which) {
@@ -1020,27 +1105,88 @@ function refreshRowMinutes(row) {
 // =====================================================
 //  Paso 6. Finalizar
 // =====================================================
-$("finishBtn").addEventListener("click", async () => {
+// Estado del flujo de finalizacion
+let finalizedReport = null;   // texto listo para guardar
+let finalizedFilename = null; // nombre del archivo listo
+
+function resetFinalizedState() {
+  if (!finalizedReport && !finalizedFilename) return;
+  finalizedReport = null;
+  finalizedFilename = null;
+  $("saveBtn").disabled = true;
+  $("summaryBox").classList.add("hidden");
+  $("previewBox").classList.add("hidden");
+  $("previewArea").value = "";
+  // No borro el statusMsg para no molestar al usuario
+}
+
+// Cualquier cambio manual en los campos del formulario invalida la finalizacion previa
+document.addEventListener("input", (ev) => {
+  if (ev.target && ev.target.closest && ev.target.closest("#formCard")) {
+    resetFinalizedState();
+  }
+});
+document.addEventListener("change", (ev) => {
+  if (ev.target && ev.target.closest && ev.target.closest("#formCard")) {
+    resetFinalizedState();
+  }
+});
+
+// Paso 6 - Boton 1: Finalizar analisis (valida y calcula resumen)
+$("finalizeBtn").addEventListener("click", () => {
   clearStatus();
   const errs = validate();
   if (errs.length) {
     setStatus("Aun faltan datos, asegurese de diligenciar todos los espacios requeridos antes de finalizar el analisis.\n- " + errs.join("\n- "), "err");
+    resetFinalizedState();
     return;
   }
-  const txt = buildReport();
-  const filename = buildFilename();
+  const summary = computeAnalysisSummary();
+  $("fInicioAnalisis").value = summary.startISO;
+  $("fFinAnalisis").value    = summary.endISO;
+  $("fDuracionAnalisis").value = summary.durationMin.toFixed(2);
+  $("summaryBox").classList.remove("hidden");
+
+  finalizedReport   = buildReport(summary);
+  finalizedFilename = buildFilename();
+  $("saveBtn").disabled = false;
+  setStatus("Analisis finalizado. Revise el resumen y pulse \"Guardar archivo\" para exportar el TXT.", "ok");
+});
+
+// Paso 6 - Boton 2: Guardar archivo
+$("saveBtn").addEventListener("click", async () => {
+  if (!finalizedReport || !finalizedFilename) {
+    setStatus("Primero pulse \"Finalizar analisis\".", "err");
+    return;
+  }
   try {
-    await saveFile(filename, txt);
-    setStatus("El archivo fue guardado con exito: " + filename, "ok");
+    await saveFile(finalizedFilename, finalizedReport);
+    setStatus("El archivo fue guardado con exito: " + finalizedFilename, "ok");
+    $("previewArea").value = finalizedReport;
+    $("previewBox").classList.remove("hidden");
+    $("saveBtn").disabled = true;
   } catch (e) {
     setStatus("No se pudo guardar el archivo: " + (e && e.message ? e.message : String(e)), "err");
   }
 });
 
+// Paso 6 - Boton 3: Reiniciar
 $("resetBtn").addEventListener("click", () => {
   if (!confirm("Se perderan todos los datos del registro actual. Continuar?")) return;
   location.reload();
 });
+
+// Devuelve { startISO, endISO, durationMin } tomando las horas fijas de las filas del Paso 5
+function computeAnalysisSummary() {
+  const startTimes = state.rows.filter(r => r.startFixed).map(r => parseLocal(r.startISO)).filter(Boolean);
+  const endTimes   = state.rows.filter(r => r.endFixed).map(r => parseLocal(r.endISO)).filter(Boolean);
+  const minStart = new Date(Math.min.apply(null, startTimes.map(d => d.getTime())));
+  const maxEnd   = new Date(Math.max.apply(null, endTimes.map(d => d.getTime())));
+  const durationMin = (maxEnd.getTime() - minStart.getTime()) / 60000;
+  const fmt = (d) => d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate())
+                     + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  return { startISO: fmt(minStart), endISO: fmt(maxEnd), durationMin: durationMin };
+}
 
 function validate() {
   const errs = [];
@@ -1098,7 +1244,8 @@ function buildFilename() {
   return base.slice(0, 150) + ".txt";
 }
 
-function buildReport() {
+function buildReport(summary) {
+  summary = summary || computeAnalysisSummary();
   const L = [];
   L.push("REGISTRO DE METODOS Y TIEMPOS");
   L.push("Generado: " + nowLocal());
@@ -1121,11 +1268,14 @@ function buildReport() {
   L.push("  Cargo  : " + $("fCargo").value.trim());
   L.push("  Turno  : " + $("fTurno").value.trim());
   L.push("");
-  L.push("[Inicio del analisis]");
-  L.push("  Fecha y hora fija: " + $("fFechaHora").value);
+  L.push("[Registro del analisis]");
+  L.push("  Fecha y hora de apertura (Paso 3): " + $("fFechaHora").value);
+  L.push("  Tipo de analisis                 : " + resolveWithOther("fTipoAnalisis", "fTipoAnalisisOtra"));
   L.push("");
-  L.push("[Analisis]");
-  L.push("  Tipo de analisis: " + resolveWithOther("fTipoAnalisis", "fTipoAnalisisOtra"));
+  L.push("[Resumen del analisis]");
+  L.push("  Hora de inicio (primer paso): " + summary.startISO);
+  L.push("  Hora final (ultimo paso)    : " + summary.endISO);
+  L.push("  Duracion total (min)        : " + summary.durationMin.toFixed(2));
   L.push("");
   L.push("[Tiempos por paso]");
   const header = ["#", "Descripcion", "Hora inicial", "Hora final", "Min", "Comentarios"];
@@ -1138,7 +1288,8 @@ function buildReport() {
     return acc + (isNaN(m) ? 0 : m);
   }, 0);
   L.push("");
-  L.push("  Tiempo total acumulado: " + total.toFixed(2) + " min");
+  L.push("  Suma de tiempos individuales: " + total.toFixed(2) + " min");
+  L.push("  (Puede diferir de la duracion total si hubo pasos en paralelo o pausas.)");
   L.push("");
   L.push("=".repeat(60));
   L.push("Fin del registro.");
