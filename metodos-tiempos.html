@@ -13,36 +13,35 @@
     :root { --bg:#141821; --card:#1c2230; --border:#2f3644; --accent:#5fa8ff; --danger:#ff6b7f; --ok:#5ad07a; --muted:#a0a7b8; color:#e6e9ef; }
   }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 20px; background: var(--bg); max-width: 1200px; margin: 0 auto; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding: 20px; background: var(--bg); max-width: 1200px; margin: 0 auto; }
   h1 { font-size: 22px; margin: 0 0 6px; }
   h2 { font-size: 17px; margin: 18px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  h3 { font-size: 15px; margin: 14px 0 6px; color: var(--accent); }
   .lede { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
   label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
-  input[type=text], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--card); color: inherit; font-family: inherit; }
+  input[type=text], input[type=number], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--card); color: inherit; font-family: inherit; }
   input[disabled], select[disabled] { background: rgba(128,128,128,0.12); cursor: not-allowed; }
   textarea { min-height: 60px; resize: vertical; }
   button { padding: 9px 16px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
   button.ghost { background: transparent; color: var(--accent); }
+  button.small { padding: 5px 10px; font-size: 12px; }
   button.danger { background: var(--danger); border-color: var(--danger); }
-  button:disabled { opacity: 0.45; cursor: not-allowed; }
-  .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; background: #6b7280; border-color: #6b7280; color: #fff; }
   .fix-line { display: flex; align-items: center; gap: 8px; }
   .fix-line input[type=text] { flex: 1; }
-  .fix-line label.check { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; font-size: 12px; color: var(--muted); white-space: nowrap; }
   table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
   th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
   th { background: rgba(31,95,191,0.08); font-weight: 600; }
-  td.time-cell { min-width: 175px; }
+  td.time-cell { min-width: 190px; }
   td.time-cell .fix-line input { font-size: 12px; padding: 5px 7px; }
   td.min-cell { text-align: right; font-variant-numeric: tabular-nums; }
-  .steps-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; margin-top: 8px; }
+  .steps-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px; margin-top: 8px; }
   .steps-list label { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; color: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--card); }
   .steps-list label:hover { border-color: var(--accent); }
   .steps-list input[type=checkbox] { margin-top: 2px; }
-  .steps-list label.disabled { opacity: 0.6; cursor: not-allowed; }
-  .status { padding: 10px 14px; border-radius: 6px; margin-top: 12px; font-size: 14px; display: none; }
+  .status { padding: 10px 14px; border-radius: 6px; margin-top: 12px; font-size: 14px; display: none; white-space: pre-wrap; }
   .status.ok  { background: rgba(10,125,43,0.12); color: var(--ok); border: 1px solid var(--ok); display: block; }
   .status.err { background: rgba(176,0,32,0.12); color: var(--danger); border: 1px solid var(--danger); display: block; }
   .folder-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -51,6 +50,7 @@
   .warn-box { padding: 8px 12px; background: rgba(255,180,0,0.15); border: 1px solid #d0a000; border-radius: 6px; font-size: 12px; color: inherit; margin-top: 8px; }
   .actions-final { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   .req::after { content: " *"; color: var(--danger); }
+  .fixed-badge { display: inline-block; padding: 4px 10px; background: var(--ok); color: #fff; font-size: 12px; font-weight: 600; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -74,7 +74,30 @@
       <div><label class="req" for="fProducto">Nombre del producto</label><input type="text" id="fProducto" maxlength="120"></div>
       <div><label class="req" for="fCodigo">Codigo</label><input type="text" id="fCodigo" maxlength="60"></div>
       <div><label class="req" for="fLote">Lote</label><input type="text" id="fLote" maxlength="60"></div>
-      <div><label class="req" for="fEmpaque">Empaque</label><input type="text" id="fEmpaque" maxlength="120"></div>
+      <div>
+        <label class="req" for="fTipoEmpaque">Tipo de empaque</label>
+        <select id="fTipoEmpaque">
+          <option value="">Seleccione...</option>
+          <option>Blister</option>
+          <option>Frasco de vidrio</option>
+          <option>Frasco plastico</option>
+          <option>Vial</option>
+          <option>Ampolla</option>
+          <option>Sobre (sachet)</option>
+          <option>Tubo colapsible</option>
+          <option>Caja de carton</option>
+          <option>Bolsa</option>
+          <option>Tambor / cuneta</option>
+          <option>Otras</option>
+        </select>
+        <div id="tipoEmpaqueOtraBox" class="hidden" style="margin-top:6px;">
+          <input type="text" id="fTipoEmpaqueOtra" maxlength="80" placeholder="Especifique el tipo de empaque">
+        </div>
+      </div>
+      <div>
+        <label class="req" for="fUnidadesEmpaque">Numero de unidades por empaque</label>
+        <input type="text" id="fUnidadesEmpaque" maxlength="30" placeholder="Ej: 10, 30, 100 mL">
+      </div>
       <div>
         <label class="req" for="fTipoMuestra">Tipo de muestra</label>
         <select id="fTipoMuestra">
@@ -87,7 +110,36 @@
       </div>
       <div id="formaFarmBox" class="hidden">
         <label class="req" for="fFormaFarm">Forma farmaceutica</label>
-        <input type="text" id="fFormaFarm" maxlength="120" placeholder="Ej: Tableta, capsula, jarabe...">
+        <select id="fFormaFarm">
+          <option value="">Seleccione...</option>
+          <option>Tableta / comprimido</option>
+          <option>Tableta recubierta</option>
+          <option>Capsula dura</option>
+          <option>Capsula blanda</option>
+          <option>Jarabe</option>
+          <option>Suspension oral</option>
+          <option>Solucion oral</option>
+          <option>Gotas orales</option>
+          <option>Polvo para reconstituir</option>
+          <option>Granulado</option>
+          <option>Crema</option>
+          <option>Unguento / pomada</option>
+          <option>Gel</option>
+          <option>Solucion topica</option>
+          <option>Ovulo</option>
+          <option>Supositorio</option>
+          <option>Solucion inyectable</option>
+          <option>Polvo liofilizado inyectable</option>
+          <option>Solucion oftalmica</option>
+          <option>Suspension oftalmica</option>
+          <option>Solucion otica</option>
+          <option>Aerosol / inhalador</option>
+          <option>Parche transdermico</option>
+          <option>Otras</option>
+        </select>
+        <div id="formaFarmOtraBox" class="hidden" style="margin-top:6px;">
+          <input type="text" id="fFormaFarmOtra" maxlength="80" placeholder="Especifique la forma farmaceutica">
+        </div>
       </div>
     </div>
 
@@ -110,11 +162,29 @@
     <h2>Paso 3. Fecha y hora de inicio</h2>
     <div class="fix-line">
       <input type="text" id="fFechaHora" disabled>
-      <label class="check"><input type="checkbox" id="fFechaHoraFix"> Fijar</label>
+      <button id="fFechaHoraBtn" type="button">Fijar hora</button>
+      <span id="fFechaHoraBadge" class="fixed-badge hidden">Fijada</span>
     </div>
 
-    <h2>Paso 4. Pasos del analisis</h2>
-    <p class="lede" id="stepsHint">Seleccione primero un tipo de muestra en el Paso 1 para ver los pasos disponibles.</p>
+    <h2>Paso 4. Analisis</h2>
+
+    <h3>Paso 4A. Tipo de analisis</h3>
+    <p class="lede" id="analysisHint">Seleccione primero un tipo de muestra en el Paso 1 para ver los tipos de analisis disponibles.</p>
+    <div class="grid">
+      <div>
+        <label class="req" for="fTipoAnalisis">Tipo de analisis</label>
+        <select id="fTipoAnalisis" disabled>
+          <option value="">Seleccione...</option>
+        </select>
+      </div>
+      <div id="analisisOtraBox" class="hidden">
+        <label class="req" for="fTipoAnalisisOtra">Especifique el tipo de analisis</label>
+        <input type="text" id="fTipoAnalisisOtra" maxlength="120">
+      </div>
+    </div>
+
+    <h3>Paso 4B. Pasos para el analisis</h3>
+    <p class="lede" id="stepsHint">Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.</p>
     <div id="stepsList" class="steps-list"></div>
 
     <h2>Paso 5. Registro de tiempos</h2>
@@ -130,7 +200,7 @@
           </tr>
         </thead>
         <tbody id="timesTBody">
-          <tr><td colspan="5" style="text-align:center; color:var(--muted);">Marque pasos en el Paso 4 para agregarlos aqui.</td></tr>
+          <tr><td colspan="5" style="text-align:center; color:var(--muted);">Marque pasos en el Paso 4B para agregarlos aqui.</td></tr>
         </tbody>
       </table>
     </div>
@@ -146,60 +216,441 @@
 <script>
 "use strict";
 
-// --- Catalogo de pasos por tipo de muestra ---
-const STEPS_BY_TYPE = {
+// =====================================================
+//  Catalogos (todo local, sin red)
+// =====================================================
+const ANALYSES_BY_TYPE = {
   proceso: [
-    "Verificacion de identidad de la muestra",
-    "Registro de la muestra en sistema/cuaderno",
-    "Preparacion de la muestra",
-    "Ejecucion del ensayo fisicoquimico",
-    "Calculo de resultados",
-    "Comparacion contra especificacion",
-    "Documentacion y archivo de datos"
+    "Peso individual / uniformidad de masa",
+    "Dureza",
+    "Friabilidad",
+    "Desintegracion",
+    "Espesor",
+    "pH",
+    "Densidad",
+    "Viscosidad",
+    "Humedad / perdida por secado",
+    "Contenido activo (assay rapido)",
+    "Inspeccion visual en linea",
+    "Otras"
   ],
   materia_prima: [
-    "Recepcion de la muestra y documentacion",
-    "Verificacion de rotulado y trazabilidad",
-    "Inspeccion visual y organoleptica",
-    "Identificacion (IR / HPLC / otro)",
-    "Valoracion (assay)",
-    "Determinacion de impurezas relacionadas",
-    "Perdida por secado / Karl Fischer",
-    "Cenizas o residuos",
-    "Emision del certificado de analisis"
+    "Identificacion (IR)",
+    "Identificacion (HPLC)",
+    "Valoracion (HPLC)",
+    "Valoracion (volumetria)",
+    "Impurezas relacionadas",
+    "Perdida por secado",
+    "Karl Fischer (humedad)",
+    "Cenizas sulfatadas",
+    "Punto de fusion",
+    "pH",
+    "Rotacion optica",
+    "Indice de refraccion",
+    "Metales pesados",
+    "Solventes residuales",
+    "Recuento microbiano",
+    "Otras"
   ],
   limpieza: [
-    "Verificacion del estado del area/equipo",
-    "Toma de muestra por hisopado",
-    "Toma de muestra por enjuague",
-    "Preparacion de las muestras",
-    "Analisis por TOC / conductividad",
-    "Analisis HPLC de trazas",
-    "Calculo del residuo vs limite aceptable",
-    "Registro y liberacion del equipo"
+    "Hisopado con HPLC",
+    "Enjuague con HPLC",
+    "TOC (Carbono Organico Total)",
+    "Conductividad",
+    "pH del enjuague",
+    "Inspeccion visual",
+    "Recuento microbiano",
+    "Endotoxinas",
+    "Otras"
   ],
   producto_terminado: [
-    "Verificacion de identidad y lote",
     "Descripcion organoleptica",
-    "Identificacion del principio activo",
-    "Valoracion (assay)",
-    "Uniformidad de contenido / masa",
-    "Ensayo de disolucion",
-    "Impurezas y productos de degradacion",
-    "Ensayos microbiologicos",
-    "Verificacion del material de empaque",
-    "Emision del certificado de analisis"
+    "Identificacion (IR)",
+    "Identificacion (HPLC)",
+    "Valoracion (HPLC)",
+    "Uniformidad de dosis",
+    "Disolucion",
+    "Impurezas relacionadas",
+    "Productos de degradacion",
+    "Humedad / perdida por secado",
+    "pH",
+    "Viscosidad",
+    "Recuento microbiano",
+    "Esterilidad",
+    "Endotoxinas",
+    "Otras"
   ]
 };
 
-// --- Estado ---
+// Pasos por analisis. Clave = nombre del analisis exacto. "Otras" y no listado usa PASOS_GENERICOS.
+const STEPS_BY_ANALYSIS = {
+  "Valoracion (HPLC)": [
+    "Busqueda de materiales y reactivos",
+    "Verificacion de vigencia de estandares",
+    "Preparacion de fase movil",
+    "Filtrado y desgasificacion de fase movil",
+    "Pesaje del estandar",
+    "Preparacion de la solucion estandar",
+    "Pesaje de la muestra",
+    "Preparacion de la solucion muestra",
+    "Filtrado de la solucion muestra",
+    "Acondicionamiento del sistema HPLC",
+    "Inyeccion de aptitud del sistema",
+    "Inyeccion de estandar",
+    "Inyeccion de muestra",
+    "Integracion de cromatogramas",
+    "Calculo de resultados",
+    "Registro y documentacion"
+  ],
+  "Valoracion (volumetria)": [
+    "Busqueda de materiales y reactivos",
+    "Verificacion / titulacion del titulante",
+    "Pesaje de la muestra",
+    "Disolucion de la muestra",
+    "Adicion de indicador",
+    "Titulacion",
+    "Registro del volumen consumido",
+    "Calculo de resultados",
+    "Registro y documentacion"
+  ],
+  "Impurezas relacionadas": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de fase movil",
+    "Preparacion de diluyente",
+    "Pesaje del estandar de referencia",
+    "Preparacion de solucion estandar",
+    "Pesaje de la muestra",
+    "Preparacion de solucion muestra",
+    "Filtrado de muestras",
+    "Acondicionamiento del cromatografo",
+    "Inyeccion de blanco",
+    "Inyeccion de aptitud",
+    "Inyeccion de estandar",
+    "Inyeccion de muestra",
+    "Identificacion de picos",
+    "Calculo de impurezas individuales y totales",
+    "Registro y documentacion"
+  ],
+  "Productos de degradacion": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de fase movil",
+    "Preparacion de solucion estandar",
+    "Preparacion de solucion muestra",
+    "Inyeccion de blanco",
+    "Inyeccion de aptitud",
+    "Inyeccion de estandar",
+    "Inyeccion de muestra",
+    "Identificacion y cuantificacion de degradantes",
+    "Calculo de resultados",
+    "Registro y documentacion"
+  ],
+  "Disolucion": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion del medio de disolucion",
+    "Desgasificacion del medio",
+    "Ajuste de temperatura a 37 C",
+    "Verificacion del equipo (velocidad, altura de paletas)",
+    "Introduccion de las unidades",
+    "Inicio del ensayo",
+    "Toma de alicuotas en los tiempos programados",
+    "Filtrado de las alicuotas",
+    "Pesaje del estandar",
+    "Preparacion de la solucion estandar",
+    "Medicion por UV / HPLC",
+    "Calculo del porcentaje disuelto",
+    "Registro y documentacion"
+  ],
+  "Identificacion (IR)": [
+    "Busqueda de materiales y reactivos",
+    "Verificacion del equipo IR",
+    "Preparacion de pastilla KBr o montaje ATR",
+    "Adquisicion del espectro de la muestra",
+    "Adquisicion del espectro del estandar (si aplica)",
+    "Comparacion de espectros",
+    "Registro y documentacion"
+  ],
+  "Identificacion (HPLC)": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de fase movil",
+    "Preparacion de solucion estandar",
+    "Preparacion de solucion muestra",
+    "Inyeccion de estandar",
+    "Inyeccion de muestra",
+    "Comparacion de tiempos de retencion",
+    "Registro y documentacion"
+  ],
+  "Perdida por secado": [
+    "Busqueda de materiales",
+    "Tarar el pesafiltro",
+    "Pesar la muestra",
+    "Secar en estufa a la temperatura y tiempo especificados",
+    "Enfriar en desecador",
+    "Pesar hasta peso constante",
+    "Calculo del porcentaje de perdida",
+    "Registro y documentacion"
+  ],
+  "Humedad / perdida por secado": [
+    "Busqueda de materiales",
+    "Tarar el recipiente",
+    "Pesar la muestra",
+    "Secar segun especificacion",
+    "Enfriar en desecador",
+    "Pesar hasta peso constante",
+    "Calculo del porcentaje de humedad",
+    "Registro y documentacion"
+  ],
+  "Karl Fischer (humedad)": [
+    "Verificacion del equipo",
+    "Calibracion con estandar de agua",
+    "Pesaje de la muestra",
+    "Introduccion en el titulador",
+    "Titulacion",
+    "Calculo del contenido de agua",
+    "Registro y documentacion"
+  ],
+  "Cenizas sulfatadas": [
+    "Busqueda de materiales",
+    "Tarar el crisol",
+    "Pesar la muestra",
+    "Adicion de acido sulfurico",
+    "Calcinacion a la temperatura especificada",
+    "Enfriar en desecador y pesar",
+    "Repetir hasta peso constante",
+    "Calculo del porcentaje de cenizas",
+    "Registro y documentacion"
+  ],
+  "Descripcion organoleptica": [
+    "Verificacion de condiciones de iluminacion",
+    "Observacion del color",
+    "Observacion del aspecto",
+    "Verificacion del olor (si aplica)",
+    "Comparacion contra especificacion",
+    "Registro y documentacion"
+  ],
+  "Uniformidad de dosis": [
+    "Seleccion de las 10 unidades",
+    "Pesaje individual",
+    "Preparacion individual de las soluciones",
+    "Preparacion del estandar",
+    "Medicion por HPLC / UV",
+    "Calculo de contenido individual",
+    "Calculo del valor de aceptacion (L1)",
+    "Registro y documentacion"
+  ],
+  "Peso individual / uniformidad de masa": [
+    "Busqueda de materiales",
+    "Calibracion / verificacion de balanza",
+    "Seleccion de las 20 unidades",
+    "Pesaje individual",
+    "Calculo de peso promedio y desviacion",
+    "Comparacion con especificacion",
+    "Registro y documentacion"
+  ],
+  "Dureza": [
+    "Verificacion del durometro",
+    "Seleccion de 10 unidades",
+    "Medicion individual",
+    "Calculo del promedio",
+    "Registro y documentacion"
+  ],
+  "Friabilidad": [
+    "Pesaje inicial de 20 unidades",
+    "Colocacion en el friabilizador",
+    "Ejecucion (100 revoluciones / 4 min)",
+    "Retiro y limpieza de las unidades",
+    "Pesaje final",
+    "Calculo del porcentaje de friabilidad",
+    "Registro y documentacion"
+  ],
+  "Desintegracion": [
+    "Preparacion del medio (agua a 37 C)",
+    "Colocacion de las unidades en los tubos",
+    "Inicio del ensayo",
+    "Observacion del tiempo de desintegracion",
+    "Registro y documentacion"
+  ],
+  "Espesor": [
+    "Verificacion del calibrador",
+    "Seleccion de 10 unidades",
+    "Medicion individual",
+    "Calculo del promedio",
+    "Registro y documentacion"
+  ],
+  "pH": [
+    "Calibracion del pH-metro con buffers",
+    "Preparacion de la solucion muestra",
+    "Medicion del pH",
+    "Registro y documentacion"
+  ],
+  "pH del enjuague": [
+    "Calibracion del pH-metro con buffers",
+    "Recoleccion del ultimo enjuague",
+    "Medicion del pH",
+    "Comparacion con especificacion",
+    "Registro y documentacion"
+  ],
+  "Densidad": [
+    "Calibracion del picnometro / densimetro",
+    "Toma de la muestra",
+    "Medicion",
+    "Registro y documentacion"
+  ],
+  "Viscosidad": [
+    "Verificacion del viscosimetro",
+    "Ajuste de temperatura de la muestra",
+    "Medicion",
+    "Calculo y comparacion con especificacion",
+    "Registro y documentacion"
+  ],
+  "Contenido activo (assay rapido)": [
+    "Busqueda de materiales",
+    "Preparacion de la muestra",
+    "Preparacion del estandar",
+    "Medicion por UV / HPLC / NIR",
+    "Calculo del porcentaje",
+    "Registro y documentacion"
+  ],
+  "Inspeccion visual en linea": [
+    "Verificacion de condiciones de iluminacion",
+    "Muestreo del lote",
+    "Inspeccion unidad por unidad",
+    "Registro de defectos",
+    "Registro y documentacion"
+  ],
+  "Punto de fusion": [
+    "Verificacion del equipo",
+    "Preparacion del capilar con la muestra",
+    "Ejecucion del ensayo",
+    "Registro del rango de fusion",
+    "Registro y documentacion"
+  ],
+  "Rotacion optica": [
+    "Calibracion del polarimetro",
+    "Preparacion de la solucion muestra",
+    "Medicion",
+    "Calculo de la rotacion especifica",
+    "Registro y documentacion"
+  ],
+  "Indice de refraccion": [
+    "Calibracion del refractometro",
+    "Ajuste de temperatura",
+    "Medicion",
+    "Registro y documentacion"
+  ],
+  "Metales pesados": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de la muestra",
+    "Preparacion de estandar",
+    "Ejecucion del ensayo (comparativo o ICP)",
+    "Calculo de resultados",
+    "Registro y documentacion"
+  ],
+  "Solventes residuales": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de la solucion muestra",
+    "Preparacion de estandares",
+    "Acondicionamiento del cromatografo de gases",
+    "Inyeccion de estandar",
+    "Inyeccion de muestra",
+    "Calculo de residuales",
+    "Registro y documentacion"
+  ],
+  "Hisopado con HPLC": [
+    "Busqueda de materiales (hisopos, disolvente)",
+    "Delimitacion del area a muestrear",
+    "Realizacion del hisopado segun patron definido",
+    "Colocacion del hisopo en tubo con disolvente",
+    "Agitacion / sonicacion",
+    "Filtrado (si aplica)",
+    "Analisis por HPLC",
+    "Calculo del residuo por cm2",
+    "Comparacion con limite aceptable",
+    "Registro y documentacion"
+  ],
+  "Enjuague con HPLC": [
+    "Preparacion del volumen de enjuague",
+    "Recoleccion de la muestra de enjuague",
+    "Filtrado (si aplica)",
+    "Analisis por HPLC",
+    "Calculo del residuo por area",
+    "Comparacion con limite aceptable",
+    "Registro y documentacion"
+  ],
+  "TOC (Carbono Organico Total)": [
+    "Busqueda de materiales",
+    "Enjuague de recipientes con agua ultrapura",
+    "Preparacion de estandar",
+    "Toma de la muestra (enjuague o hisopado)",
+    "Medicion en el equipo TOC",
+    "Calculo del residuo (mg / cm2)",
+    "Comparacion con limite aceptable",
+    "Registro y documentacion"
+  ],
+  "Conductividad": [
+    "Verificacion / calibracion del equipo",
+    "Toma de muestra",
+    "Medicion",
+    "Comparacion con limite",
+    "Registro y documentacion"
+  ],
+  "Inspeccion visual": [
+    "Verificacion de condiciones de iluminacion",
+    "Inspeccion del area / equipo",
+    "Verificacion de ausencia de residuos",
+    "Registro fotografico (si aplica)",
+    "Registro y documentacion"
+  ],
+  "Recuento microbiano": [
+    "Busqueda de materiales estériles",
+    "Preparacion de diluciones",
+    "Siembra en placas o filtracion por membrana",
+    "Incubacion a temperatura y tiempo especificados",
+    "Conteo de colonias",
+    "Calculo de UFC/g o UFC/mL",
+    "Registro y documentacion"
+  ],
+  "Esterilidad": [
+    "Busqueda de materiales estériles",
+    "Preparacion de medios de cultivo",
+    "Verificacion de esterilidad de medios",
+    "Transferencia de muestra (filtracion por membrana o siembra directa)",
+    "Incubacion 14 dias",
+    "Observacion de turbidez",
+    "Registro y documentacion"
+  ],
+  "Endotoxinas": [
+    "Busqueda de materiales apirogenicos",
+    "Preparacion de la muestra",
+    "Preparacion del estandar de endotoxinas",
+    "Ejecucion del ensayo (LAL / kinetico)",
+    "Calculo del contenido",
+    "Comparacion con limite",
+    "Registro y documentacion"
+  ]
+};
+
+const PASOS_GENERICOS = [
+  "Busqueda de materiales y reactivos",
+  "Preparacion de la muestra",
+  "Preparacion del estandar",
+  "Ejecucion del analisis",
+  "Calculo de resultados",
+  "Registro y documentacion"
+];
+
+// =====================================================
+//  Estado
+// =====================================================
 const state = {
   folderHandle: null,
   folderLabel: "",
+  fechaInicioFija: false,
   rows: []  // { id, step, startISO, startFixed, endISO, endFixed, comment }
 };
 
-// --- Utilidades seguras ---
+// =====================================================
+//  Utilidades
+// =====================================================
 function $(id) { return document.getElementById(id); }
 function pad(n) { return String(n).padStart(2, "0"); }
 function nowLocal() {
@@ -208,13 +659,10 @@ function nowLocal() {
        + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
 }
 function parseLocal(str) {
-  // "YYYY-MM-DD HH:MM:SS" -> Date
   const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(str);
   if (!m) return null;
   return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
 }
-// Sanitiza cualquier fragmento que se inserte en el nombre de archivo.
-// Elimina separadores de ruta, caracteres de control, reservados de Windows.
 function sanitizeForFilename(s) {
   if (!s) return "";
   return String(s)
@@ -237,7 +685,16 @@ function clearStatus() {
   el.className = "status";
 }
 
-// --- Paso 0. Carpeta ---
+// Devuelve el valor del selector, resolviendo "Otras" con el campo libre.
+function resolveWithOther(selectId, otherId) {
+  const sel = $(selectId).value;
+  if (sel === "Otras") return ($(otherId).value || "").trim();
+  return sel;
+}
+
+// =====================================================
+//  Paso 0. Carpeta
+// =====================================================
 $("pickFolderBtn").addEventListener("click", async () => {
   if (typeof window.showDirectoryPicker !== "function") {
     $("folderFallback").classList.remove("hidden");
@@ -263,27 +720,96 @@ $("pickFolderBtn").addEventListener("click", async () => {
   }
 });
 
-// --- Paso 1. Tipo de muestra ---
+// =====================================================
+//  Paso 1. Empaque "Otras" / Forma farmaceutica "Otras" / Tipo de muestra
+// =====================================================
+$("fTipoEmpaque").addEventListener("change", (ev) => {
+  const other = ev.target.value === "Otras";
+  $("tipoEmpaqueOtraBox").classList.toggle("hidden", !other);
+  if (!other) $("fTipoEmpaqueOtra").value = "";
+});
+
+$("fFormaFarm").addEventListener("change", (ev) => {
+  const other = ev.target.value === "Otras";
+  $("formaFarmOtraBox").classList.toggle("hidden", !other);
+  if (!other) $("fFormaFarmOtra").value = "";
+});
+
 $("fTipoMuestra").addEventListener("change", (ev) => {
   const val = ev.target.value;
   $("formaFarmBox").classList.toggle("hidden", val !== "producto_terminado");
-  if (val !== "producto_terminado") $("fFormaFarm").value = "";
-  renderStepsList(val);
+  if (val !== "producto_terminado") {
+    $("fFormaFarm").value = "";
+    $("formaFarmOtraBox").classList.add("hidden");
+    $("fFormaFarmOtra").value = "";
+  }
+  populateAnalysisSelect(val);
 });
 
-function renderStepsList(type) {
+// =====================================================
+//  Paso 4A. Tipo de analisis (segun tipo de muestra)
+// =====================================================
+function populateAnalysisSelect(sampleType) {
+  const sel = $("fTipoAnalisis");
+  sel.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = "Seleccione...";
+  sel.appendChild(first);
+
+  const list = ANALYSES_BY_TYPE[sampleType];
+  if (!list) {
+    sel.disabled = true;
+    $("analysisHint").textContent = "Seleccione primero un tipo de muestra en el Paso 1 para ver los tipos de analisis disponibles.";
+    $("analisisOtraBox").classList.add("hidden");
+    $("fTipoAnalisisOtra").value = "";
+    renderStepsList("");
+    return;
+  }
+  list.forEach(a => {
+    const o = document.createElement("option");
+    o.value = a; o.textContent = a;
+    sel.appendChild(o);
+  });
+  sel.disabled = false;
+  sel.value = "";
+  $("analysisHint").textContent = "Seleccione el analisis a ejecutar.";
+  $("analisisOtraBox").classList.add("hidden");
+  $("fTipoAnalisisOtra").value = "";
+  renderStepsList("");
+  // limpiar tabla y filas activas al cambiar de tipo de muestra
+  state.rows = [];
+  renderTimesTable();
+}
+
+$("fTipoAnalisis").addEventListener("change", (ev) => {
+  const val = ev.target.value;
+  const isOther = (val === "Otras");
+  $("analisisOtraBox").classList.toggle("hidden", !isOther);
+  if (!isOther) $("fTipoAnalisisOtra").value = "";
+  renderStepsList(val);
+  state.rows = [];
+  renderTimesTable();
+});
+
+$("fTipoAnalisisOtra").addEventListener("input", () => {
+  // Al escribir un analisis nuevo mantenemos los pasos genericos ya listados;
+  // no hace falta re-renderizar porque STEPS_BY_ANALYSIS["Otras"] no existe -> genericos.
+});
+
+// =====================================================
+//  Paso 4B. Pasos del analisis
+// =====================================================
+function renderStepsList(analysis) {
   const container = $("stepsList");
   container.textContent = "";
   const hint = $("stepsHint");
-  const steps = STEPS_BY_TYPE[type];
-  if (!steps) {
-    hint.textContent = "Seleccione primero un tipo de muestra en el Paso 1 para ver los pasos disponibles.";
-    // Limpiar filas existentes (si el usuario cambia el tipo despues)
-    state.rows = [];
-    renderTimesTable();
+  if (!analysis) {
+    hint.textContent = "Seleccione un tipo de analisis en el Paso 4A para ver los pasos disponibles.";
     return;
   }
-  hint.textContent = "Marque cada paso a medida que lo va a realizar. Cada marca agrega una fila al Paso 5.";
+  const steps = STEPS_BY_ANALYSIS[analysis] || PASOS_GENERICOS;
+  hint.textContent = "Marque cada paso a medida que lo vaya a realizar. Cada marca agrega una fila al Paso 5.";
   steps.forEach((step, idx) => {
     const label = document.createElement("label");
     const cb = document.createElement("input");
@@ -297,9 +823,6 @@ function renderStepsList(type) {
     label.appendChild(span);
     container.appendChild(label);
   });
-  // Al cambiar de tipo se limpia la tabla de tiempos.
-  state.rows = [];
-  renderTimesTable();
 }
 
 function onStepToggle(cb) {
@@ -316,7 +839,6 @@ function onStepToggle(cb) {
     };
     state.rows.push(row);
   } else {
-    // Solo permitir des-marcar si la fila NO tiene horas fijadas.
     const idx = state.rows.findIndex(r => r.step === step && !(r.startFixed || r.endFixed));
     if (idx === -1) {
       cb.checked = true;
@@ -328,24 +850,31 @@ function onStepToggle(cb) {
   renderTimesTable();
 }
 
-// --- Paso 3. Fecha y hora inicial ---
+// =====================================================
+//  Paso 3. Fecha y hora inicial (boton "Fijar hora")
+// =====================================================
 let fechaHoraTimer = null;
 function initFechaHora() {
   const inp = $("fFechaHora");
-  const cb = $("fFechaHoraFix");
-  if (!cb.checked) inp.value = nowLocal();
+  const btn = $("fFechaHoraBtn");
+  if (!state.fechaInicioFija) inp.value = nowLocal();
   if (fechaHoraTimer) clearInterval(fechaHoraTimer);
   fechaHoraTimer = setInterval(() => {
-    if (!$("fFechaHoraFix").checked) $("fFechaHora").value = nowLocal();
+    if (!state.fechaInicioFija) $("fFechaHora").value = nowLocal();
   }, 1000);
-  cb.addEventListener("change", () => {
-    if (cb.checked) {
-      inp.value = nowLocal();
-    }
-  }, { once: false });
+  btn.onclick = () => {
+    if (state.fechaInicioFija) return;
+    state.fechaInicioFija = true;
+    inp.value = nowLocal();
+    btn.disabled = true;
+    btn.textContent = "Hora fijada";
+    $("fFechaHoraBadge").classList.remove("hidden");
+  };
 }
 
-// --- Paso 5. Tabla de tiempos ---
+// =====================================================
+//  Paso 5. Tabla de tiempos
+// =====================================================
 function renderTimesTable() {
   const tbody = $("timesTBody");
   tbody.textContent = "";
@@ -355,7 +884,7 @@ function renderTimesTable() {
     td.colSpan = 5;
     td.style.textAlign = "center";
     td.style.color = "var(--muted)";
-    td.textContent = "Marque pasos en el Paso 4 para agregarlos aqui.";
+    td.textContent = "Marque pasos en el Paso 4B para agregarlos aqui.";
     tr.appendChild(td);
     tbody.appendChild(tr);
     return;
@@ -402,31 +931,31 @@ function makeTimeCell(row, which) {
   const key = which === "start" ? "startISO" : "endISO";
   const fixedKey = which === "start" ? "startFixed" : "endFixed";
   inp.value = row[key];
-  const lbl = document.createElement("label");
-  lbl.className = "check";
   const cb = document.createElement("input");
   cb.type = "checkbox";
+  cb.title = "Fijar";
   cb.checked = row[fixedKey];
-  cb.disabled = row[fixedKey]; // una vez fijado no se puede desmarcar
+  cb.disabled = row[fixedKey];
   cb.addEventListener("change", () => {
     if (cb.checked) {
       row[key] = nowLocal();
       row[fixedKey] = true;
       inp.value = row[key];
       cb.disabled = true;
-      // Refrescar minutos y bloquear ambos en la fila si aplica.
       refreshRowMinutes(row);
     }
   });
-  const span = document.createElement("span");
-  span.textContent = "Fijar";
+  const lbl = document.createElement("label");
+  lbl.style.fontSize = "11px";
+  lbl.style.color = "var(--muted)";
+  lbl.style.whiteSpace = "nowrap";
   lbl.appendChild(cb);
+  const span = document.createElement("span"); span.textContent = " Fijar";
   lbl.appendChild(span);
   wrap.appendChild(inp);
   wrap.appendChild(lbl);
   td.appendChild(wrap);
 
-  // Si aun no esta fijado, actualiza cada segundo con la hora actual.
   if (!row[fixedKey]) {
     const timer = setInterval(() => {
       if (row[fixedKey]) { clearInterval(timer); return; }
@@ -454,7 +983,9 @@ function refreshRowMinutes(row) {
   if (minCell) minCell.textContent = computeMinutes(row);
 }
 
-// --- Paso 6. Finalizar ---
+// =====================================================
+//  Paso 6. Finalizar
+// =====================================================
 $("finishBtn").addEventListener("click", async () => {
   clearStatus();
   const errs = validate();
@@ -483,20 +1014,31 @@ function validate() {
     ["fProducto", "Nombre del producto"],
     ["fCodigo", "Codigo"],
     ["fLote", "Lote"],
-    ["fEmpaque", "Empaque"],
+    ["fTipoEmpaque", "Tipo de empaque"],
+    ["fUnidadesEmpaque", "Numero de unidades por empaque"],
     ["fTipoMuestra", "Tipo de muestra"],
     ["fAnalista", "Nombre del analista"],
     ["fCargo", "Cargo"],
-    ["fTurno", "Turno"]
+    ["fTurno", "Turno"],
+    ["fTipoAnalisis", "Tipo de analisis (Paso 4A)"]
   ];
   req.forEach(([id, label]) => {
     if (!$(id).value.trim()) errs.push(label);
   });
-  if ($("fTipoMuestra").value === "producto_terminado" && !$("fFormaFarm").value.trim()) {
-    errs.push("Forma farmaceutica");
+  if ($("fTipoEmpaque").value === "Otras" && !$("fTipoEmpaqueOtra").value.trim()) {
+    errs.push("Detalle del tipo de empaque (Otras)");
   }
-  if (!$("fFechaHoraFix").checked) errs.push("Fijar la fecha y hora del Paso 3");
-  if (state.rows.length === 0) errs.push("Al menos un paso del analisis (Paso 4)");
+  if ($("fTipoMuestra").value === "producto_terminado") {
+    if (!$("fFormaFarm").value.trim()) errs.push("Forma farmaceutica");
+    if ($("fFormaFarm").value === "Otras" && !$("fFormaFarmOtra").value.trim()) {
+      errs.push("Detalle de la forma farmaceutica (Otras)");
+    }
+  }
+  if ($("fTipoAnalisis").value === "Otras" && !$("fTipoAnalisisOtra").value.trim()) {
+    errs.push("Detalle del tipo de analisis (Otras)");
+  }
+  if (!state.fechaInicioFija) errs.push("Fijar la fecha y hora del Paso 3");
+  if (state.rows.length === 0) errs.push("Al menos un paso del analisis (Paso 4B)");
   state.rows.forEach((r, i) => {
     if (!r.startFixed) errs.push("Fijar hora inicial del paso " + (i+1) + " (" + r.step + ")");
     if (!r.endFixed)   errs.push("Fijar hora final del paso " + (i+1) + " (" + r.step + ")");
@@ -529,14 +1071,15 @@ function buildReport() {
   L.push("=".repeat(60));
   L.push("");
   L.push("[Producto]");
-  L.push("  Nombre         : " + $("fProducto").value.trim());
-  L.push("  Codigo         : " + $("fCodigo").value.trim());
-  L.push("  Lote           : " + $("fLote").value.trim());
-  L.push("  Empaque        : " + $("fEmpaque").value.trim());
+  L.push("  Nombre               : " + $("fProducto").value.trim());
+  L.push("  Codigo               : " + $("fCodigo").value.trim());
+  L.push("  Lote                 : " + $("fLote").value.trim());
+  L.push("  Tipo de empaque      : " + resolveWithOther("fTipoEmpaque", "fTipoEmpaqueOtra"));
+  L.push("  Unidades por empaque : " + $("fUnidadesEmpaque").value.trim());
   const tipo = $("fTipoMuestra").options[$("fTipoMuestra").selectedIndex].text;
-  L.push("  Tipo de muestra: " + tipo);
+  L.push("  Tipo de muestra      : " + tipo);
   if ($("fTipoMuestra").value === "producto_terminado") {
-    L.push("  Forma farmac.  : " + $("fFormaFarm").value.trim());
+    L.push("  Forma farmaceutica   : " + resolveWithOther("fFormaFarm", "fFormaFarmOtra"));
   }
   L.push("");
   L.push("[Analista]");
@@ -547,13 +1090,15 @@ function buildReport() {
   L.push("[Inicio del analisis]");
   L.push("  Fecha y hora fija: " + $("fFechaHora").value);
   L.push("");
+  L.push("[Analisis]");
+  L.push("  Tipo de analisis: " + resolveWithOther("fTipoAnalisis", "fTipoAnalisisOtra"));
+  L.push("");
   L.push("[Tiempos por paso]");
   const header = ["#", "Descripcion", "Hora inicial", "Hora final", "Min", "Comentarios"];
   const rows = state.rows.map((r, i) => [
     String(i+1), r.step, r.startISO, r.endISO, computeMinutes(r), (r.comment || "").replace(/\s+/g, " ").trim()
   ]);
   L.push(formatTable(header, rows));
-  // Total acumulado
   const total = state.rows.reduce((acc, r) => {
     const m = parseFloat(computeMinutes(r));
     return acc + (isNaN(m) ? 0 : m);
@@ -572,19 +1117,18 @@ function formatTable(header, rows) {
     rows.forEach(r => { if ((r[i] || "").length > w) w = r[i].length; });
     return Math.min(w, 40);
   });
-  const pad = (s, w) => {
+  const padCell = (s, w) => {
     s = String(s || "");
     if (s.length > w) s = s.slice(0, w-1) + "~";
     return s + " ".repeat(w - s.length);
   };
   const sep = "  " + widths.map(w => "-".repeat(w)).join("  ") + "  ";
-  const hdr = "  " + header.map((h,i) => pad(h, widths[i])).join("  ") + "  ";
-  const body = rows.map(r => "  " + r.map((c,i) => pad(c, widths[i])).join("  ") + "  ").join("\n");
+  const hdr = "  " + header.map((h,i) => padCell(h, widths[i])).join("  ") + "  ";
+  const body = rows.map(r => "  " + r.map((c,i) => padCell(c, widths[i])).join("  ") + "  ").join("\n");
   return [sep, hdr, sep, body, sep].join("\n");
 }
 
 async function saveFile(filename, content) {
-  // Ruta 1: File System Access API (carpeta previamente seleccionada)
   if (state.folderHandle && typeof state.folderHandle.getFileHandle === "function") {
     const fh = await state.folderHandle.getFileHandle(filename, { create: true });
     const w = await fh.createWritable();
@@ -592,7 +1136,6 @@ async function saveFile(filename, content) {
     await w.close();
     return;
   }
-  // Ruta 2: descarga por el navegador
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
