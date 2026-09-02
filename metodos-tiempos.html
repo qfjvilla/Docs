@@ -122,6 +122,10 @@
           <option value="materia_prima">Materia prima</option>
           <option value="limpieza">Limpieza</option>
           <option value="producto_terminado">Producto terminado</option>
+          <option value="validacion_metodo">Validacion de metodo</option>
+          <option value="validacion_proceso">Validacion de proceso</option>
+          <option value="desarrollo_metodo">Desarrollo de metodo</option>
+          <option value="implementacion_metodo">Implementacion de metodo</option>
         </select>
       </div>
       <div id="formaFarmBox" class="hidden">
@@ -325,6 +329,63 @@ const ANALYSES_BY_TYPE = {
     "Recuento microbiano",
     "Esterilidad",
     "Endotoxinas",
+    "Otras"
+  ],
+  validacion_metodo: [
+    "Especificidad / selectividad",
+    "Linealidad",
+    "Rango",
+    "Exactitud / recuperacion",
+    "Precision (repetibilidad)",
+    "Precision intermedia",
+    "Precision (reproducibilidad)",
+    "Limite de deteccion (LOD)",
+    "Limite de cuantificacion (LOQ)",
+    "Robustez",
+    "Aptitud del sistema",
+    "Estabilidad de la solucion",
+    "Filtrabilidad",
+    "Otras"
+  ],
+  validacion_proceso: [
+    "Calificacion de diseno (DQ)",
+    "Calificacion de instalacion (IQ)",
+    "Calificacion de operacion (OQ)",
+    "Calificacion de desempeno (PQ)",
+    "Muestreo del lote de validacion",
+    "Analisis de uniformidad de mezcla",
+    "Analisis de contenido del lote",
+    "Analisis de disolucion del lote",
+    "Analisis de impurezas del lote",
+    "Estudio de reproducibilidad entre lotes",
+    "Verificacion continua del proceso (CPV)",
+    "Otras"
+  ],
+  desarrollo_metodo: [
+    "Seleccion de columna cromatografica",
+    "Screening de fase movil",
+    "Optimizacion de gradiente",
+    "Optimizacion de temperatura de columna",
+    "Optimizacion de flujo",
+    "Optimizacion de longitud de onda / detector",
+    "Evaluacion de solventes de disolucion",
+    "Screening de excipientes / interferencias",
+    "Estudio de degradacion forzada",
+    "Definicion de aptitud del sistema",
+    "Elaboracion de protocolo preliminar",
+    "Otras"
+  ],
+  implementacion_metodo: [
+    "Verificacion documental del metodo",
+    "Adquisicion de estandares y materiales",
+    "Calificacion del equipo receptor",
+    "Aptitud del sistema con el metodo transferido",
+    "Prueba paralela (analista emisor y receptor)",
+    "Comparativo estadistico de resultados",
+    "Entrenamiento del personal receptor",
+    "Elaboracion del protocolo de transferencia",
+    "Ejecucion del protocolo",
+    "Aprobacion de la implementacion",
     "Otras"
   ]
 };
@@ -672,6 +733,327 @@ const STEPS_BY_ANALYSIS = {
     "Ejecucion del ensayo (LAL / kinetico)",
     "Calculo del contenido",
     "Comparacion con limite",
+    "Registro y documentacion"
+  ],
+
+  // ---- Validacion de metodo (ICH Q2) ----
+  "Especificidad / selectividad": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion del placebo",
+    "Preparacion de solucion muestra",
+    "Preparacion de solucion estandar",
+    "Preparacion de soluciones de degradacion forzada (acida, basica, oxidativa, termica, fotolitica)",
+    "Analisis cromatografico de todas las soluciones",
+    "Evaluacion de pureza de pico y resolucion",
+    "Registro y documentacion"
+  ],
+  "Linealidad": [
+    "Busqueda de materiales y reactivos",
+    "Pesaje del estandar",
+    "Preparacion de la solucion madre",
+    "Preparacion de los niveles (50, 75, 100, 125, 150 %)",
+    "Analisis por triplicado de cada nivel",
+    "Calculo de la regresion (r, pendiente, intercepto)",
+    "Evaluacion de residuos",
+    "Registro y documentacion"
+  ],
+  "Rango": [
+    "Definicion del rango teorico del metodo",
+    "Preparacion de niveles extremos y central",
+    "Analisis por triplicado en cada nivel",
+    "Verificacion de linealidad, exactitud y precision en el rango",
+    "Registro y documentacion"
+  ],
+  "Exactitud / recuperacion": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion del placebo",
+    "Preparacion de spike a 3 niveles (80, 100, 120 %)",
+    "Analisis por triplicado en cada nivel",
+    "Calculo del porcentaje de recuperacion",
+    "Calculo de la desviacion estandar relativa",
+    "Registro y documentacion"
+  ],
+  "Precision (repetibilidad)": [
+    "Busqueda de materiales y reactivos",
+    "Preparacion de 6 muestras al 100 %",
+    "Analisis en el mismo dia, analista y equipo",
+    "Calculo del porcentaje de RSD",
+    "Comparacion con criterio de aceptacion",
+    "Registro y documentacion"
+  ],
+  "Precision intermedia": [
+    "Preparacion de muestras por segundo analista, dia o equipo",
+    "Ejecucion del analisis",
+    "Calculo del RSD combinado",
+    "Comparacion estadistica (F-test / ANOVA)",
+    "Registro y documentacion"
+  ],
+  "Precision (reproducibilidad)": [
+    "Preparacion y analisis en un laboratorio diferente",
+    "Recoleccion de los resultados",
+    "Comparacion estadistica de resultados",
+    "Registro y documentacion"
+  ],
+  "Limite de deteccion (LOD)": [
+    "Preparacion de diluciones seriadas del estandar",
+    "Analisis cromatografico",
+    "Determinacion por senal/ruido (3:1) o por pendiente/desviacion",
+    "Verificacion experimental",
+    "Registro y documentacion"
+  ],
+  "Limite de cuantificacion (LOQ)": [
+    "Preparacion de diluciones seriadas del estandar",
+    "Analisis cromatografico",
+    "Determinacion por senal/ruido (10:1) o por pendiente/desviacion",
+    "Verificacion experimental de precision y exactitud al LOQ",
+    "Registro y documentacion"
+  ],
+  "Robustez": [
+    "Definicion de los factores a variar (pH, flujo, temperatura, composicion)",
+    "Diseno experimental (Plackett-Burman o similar)",
+    "Preparacion y analisis segun el diseno",
+    "Evaluacion estadistica de los efectos",
+    "Registro y documentacion"
+  ],
+  "Aptitud del sistema": [
+    "Preparacion de la solucion de aptitud",
+    "Inyecciones repetidas del estandar",
+    "Calculo de RSD, factor de asimetria, resolucion, platos teoricos",
+    "Comparacion con criterios de aceptacion",
+    "Registro y documentacion"
+  ],
+  "Estabilidad de la solucion": [
+    "Preparacion de solucion muestra y estandar",
+    "Almacenamiento en condiciones definidas (refrigerado / ambiente)",
+    "Analisis a tiempos 0, 24, 48, 72 h (o segun protocolo)",
+    "Calculo del porcentaje de recuperacion por tiempo",
+    "Definicion del tiempo maximo de uso",
+    "Registro y documentacion"
+  ],
+  "Filtrabilidad": [
+    "Preparacion de la solucion muestra",
+    "Filtracion a traves de diferentes membranas (PVDF, nylon, PTFE)",
+    "Analisis de las porciones filtradas",
+    "Comparacion contra la no filtrada",
+    "Seleccion del filtro compatible",
+    "Registro y documentacion"
+  ],
+
+  // ---- Validacion de proceso ----
+  "Calificacion de diseno (DQ)": [
+    "Revision de las especificaciones del usuario (URS)",
+    "Revision de las especificaciones funcionales (FS)",
+    "Verificacion del cumplimiento de la propuesta del proveedor",
+    "Elaboracion del reporte DQ",
+    "Aprobacion"
+  ],
+  "Calificacion de instalacion (IQ)": [
+    "Verificacion de la recepcion del equipo",
+    "Verificacion de utilidades (energia, aire, agua)",
+    "Verificacion de accesorios y consumibles",
+    "Verificacion de documentacion del proveedor",
+    "Registro y aprobacion"
+  ],
+  "Calificacion de operacion (OQ)": [
+    "Verificacion de funciones criticas",
+    "Ejecucion de la calibracion inicial",
+    "Ejecucion de pruebas de aptitud",
+    "Registro y aprobacion"
+  ],
+  "Calificacion de desempeno (PQ)": [
+    "Ejecucion del metodo bajo condiciones reales de uso",
+    "Verificacion de resultados contra especificacion",
+    "Verificacion de la estabilidad del desempeno",
+    "Registro y aprobacion"
+  ],
+  "Muestreo del lote de validacion": [
+    "Definicion del plan de muestreo",
+    "Toma de muestras en los puntos criticos",
+    "Rotulado y trazabilidad",
+    "Envio al laboratorio",
+    "Registro y documentacion"
+  ],
+  "Analisis de uniformidad de mezcla": [
+    "Toma de muestras en distintos puntos del mezclador",
+    "Preparacion individual de cada muestra",
+    "Analisis por HPLC / UV",
+    "Calculo del RSD entre puntos",
+    "Comparacion con criterio de aceptacion",
+    "Registro y documentacion"
+  ],
+  "Analisis de contenido del lote": [
+    "Muestreo del lote",
+    "Preparacion de las muestras",
+    "Analisis por HPLC / volumetria",
+    "Calculo del contenido",
+    "Registro y documentacion"
+  ],
+  "Analisis de disolucion del lote": [
+    "Preparacion del medio de disolucion",
+    "Verificacion de temperatura y velocidad del equipo",
+    "Introduccion de las unidades",
+    "Toma de alicuotas en los tiempos programados",
+    "Medicion por UV / HPLC",
+    "Calculo del porcentaje disuelto",
+    "Registro y documentacion"
+  ],
+  "Analisis de impurezas del lote": [
+    "Preparacion de fase movil y diluyente",
+    "Preparacion de la solucion estandar",
+    "Preparacion de la solucion muestra",
+    "Analisis cromatografico",
+    "Calculo de impurezas individuales y totales",
+    "Registro y documentacion"
+  ],
+  "Estudio de reproducibilidad entre lotes": [
+    "Analisis de 3 lotes consecutivos",
+    "Comparacion estadistica de resultados",
+    "Verificacion de consistencia entre lotes",
+    "Registro y documentacion"
+  ],
+  "Verificacion continua del proceso (CPV)": [
+    "Recoleccion de datos de rutina",
+    "Analisis estadistico (SPC)",
+    "Evaluacion de tendencias",
+    "Elaboracion del reporte de CPV",
+    "Registro y documentacion"
+  ],
+
+  // ---- Desarrollo de metodo ----
+  "Seleccion de columna cromatografica": [
+    "Definicion de los criterios de seleccion",
+    "Preparacion de la solucion de prueba",
+    "Ejecucion con las columnas candidatas",
+    "Comparacion de resolucion, forma de pico y tiempo de analisis",
+    "Seleccion justificada",
+    "Registro y documentacion"
+  ],
+  "Screening de fase movil": [
+    "Preparacion de varias fases moviles (buffers, pH, organicos)",
+    "Ejecucion cromatografica",
+    "Comparacion de separacion y resolucion",
+    "Seleccion justificada",
+    "Registro y documentacion"
+  ],
+  "Optimizacion de gradiente": [
+    "Diseno de los programas de gradiente",
+    "Ejecucion de cada programa",
+    "Evaluacion de resolucion y tiempo de analisis",
+    "Seleccion del gradiente optimo",
+    "Registro y documentacion"
+  ],
+  "Optimizacion de temperatura de columna": [
+    "Ejecucion del metodo a 25, 30, 35 y 40 C",
+    "Comparacion de resolucion y forma de pico",
+    "Seleccion de la temperatura optima",
+    "Registro y documentacion"
+  ],
+  "Optimizacion de flujo": [
+    "Ejecucion del metodo a 0.8, 1.0, 1.2 y 1.5 mL/min",
+    "Evaluacion de presion y resolucion",
+    "Seleccion del flujo optimo",
+    "Registro y documentacion"
+  ],
+  "Optimizacion de longitud de onda / detector": [
+    "Barrido UV-Vis del estandar",
+    "Seleccion del maximo de absorbancia",
+    "Verificacion con muestra real",
+    "Registro y documentacion"
+  ],
+  "Evaluacion de solventes de disolucion": [
+    "Preparacion de la muestra en varios solventes",
+    "Comparacion de la recuperacion",
+    "Seleccion del solvente adecuado",
+    "Registro y documentacion"
+  ],
+  "Screening de excipientes / interferencias": [
+    "Preparacion de cada excipiente por separado",
+    "Analisis cromatografico",
+    "Verificacion de ausencia de interferencia",
+    "Registro y documentacion"
+  ],
+  "Estudio de degradacion forzada": [
+    "Preparacion de la muestra",
+    "Sometimiento a estres: acido, base, peroxido, calor, luz UV",
+    "Analisis de cada condicion",
+    "Verificacion de separacion de degradantes vs pico principal",
+    "Registro y documentacion"
+  ],
+  "Definicion de aptitud del sistema": [
+    "Establecimiento de criterios (RSD, factor de cola, resolucion, platos)",
+    "Documentacion en el metodo",
+    "Registro y documentacion"
+  ],
+  "Elaboracion de protocolo preliminar": [
+    "Redaccion del metodo",
+    "Definicion de aptitud del sistema",
+    "Definicion del rango operativo",
+    "Revision interna",
+    "Registro y documentacion"
+  ],
+
+  // ---- Implementacion / transferencia de metodo ----
+  "Verificacion documental del metodo": [
+    "Revision del metodo vigente",
+    "Verificacion de cambios respecto a la version previa",
+    "Verificacion de la trazabilidad",
+    "Registro y documentacion"
+  ],
+  "Adquisicion de estandares y materiales": [
+    "Solicitud de estandares",
+    "Recepcion y verificacion de vigencia",
+    "Recepcion de reactivos y consumibles",
+    "Registro y documentacion"
+  ],
+  "Calificacion del equipo receptor": [
+    "Verificacion de calibraciones vigentes",
+    "Ejecucion de la aptitud del sistema",
+    "Aprobacion",
+    "Registro y documentacion"
+  ],
+  "Aptitud del sistema con el metodo transferido": [
+    "Preparacion de la solucion de aptitud",
+    "Inyecciones repetidas del estandar",
+    "Calculo de RSD, factor de cola, resolucion",
+    "Comparacion con criterios del metodo",
+    "Registro y documentacion"
+  ],
+  "Prueba paralela (analista emisor y receptor)": [
+    "Preparacion del mismo lote por ambos analistas",
+    "Analisis paralelo",
+    "Recoleccion de resultados",
+    "Calculo de la diferencia estadistica",
+    "Registro y documentacion"
+  ],
+  "Comparativo estadistico de resultados": [
+    "Recoleccion de resultados de ambos laboratorios",
+    "Aplicacion de t-test / F-test",
+    "Verificacion de criterios (por ejemplo diferencia <= 2 %)",
+    "Registro y documentacion"
+  ],
+  "Entrenamiento del personal receptor": [
+    "Explicacion teorica del metodo",
+    "Demostracion practica",
+    "Ejecucion supervisada",
+    "Evaluacion del analista",
+    "Registro y documentacion"
+  ],
+  "Elaboracion del protocolo de transferencia": [
+    "Redaccion del protocolo",
+    "Definicion de criterios de aceptacion",
+    "Aprobacion por ambas partes",
+    "Registro y documentacion"
+  ],
+  "Ejecucion del protocolo": [
+    "Aplicacion paso a paso del protocolo",
+    "Registro de resultados",
+    "Elaboracion del reporte final",
+    "Registro y documentacion"
+  ],
+  "Aprobacion de la implementacion": [
+    "Elaboracion del reporte de transferencia",
+    "Revision y aprobacion",
+    "Emision del metodo oficial para el laboratorio receptor",
     "Registro y documentacion"
   ]
 };
