@@ -36,9 +36,15 @@
   table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
   th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
   th { background: rgba(31,95,191,0.08); font-weight: 600; }
-  td.time-cell { min-width: 190px; }
+  td.time-cell { min-width: 210px; }
+  td.time-cell .fix-line { flex-wrap: wrap; gap: 6px; }
   td.time-cell .fix-line input { font-size: 12px; padding: 5px 7px; }
+  td.time-cell input.editing { background: #fff8e1; color: #6a4a00; border-color: #d0a000; }
   td.min-cell { text-align: right; font-variant-numeric: tabular-nums; }
+  td.min-cell.edited { color: var(--danger); font-weight: 700; }
+  .row-actions { display: flex; gap: 4px; justify-content: center; align-items: center; }
+  .row-actions button { padding: 4px 8px; font-size: 12px; min-width: 32px; }
+  .arrow-btn { background: transparent; color: var(--accent); }
   .steps-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px; margin-top: 8px; }
   .steps-list label { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; color: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--card); }
   .steps-list label:hover { border-color: var(--accent); }
@@ -935,8 +941,10 @@ function onStepToggle(cb) {
       step: step,
       startISO: nowLocal(),
       startFixed: false,
+      startEdited: false,
       endISO: nowLocal(),
       endFixed: false,
+      endEdited: false,
       comment: ""
     };
     state.rows.push(row);
@@ -1007,6 +1015,7 @@ function renderRow(row) {
 
   const tdMin = document.createElement("td");
   tdMin.className = "min-cell";
+  if (row.startEdited || row.endEdited) tdMin.classList.add("edited");
   tdMin.textContent = computeMinutes(row);
   tr.appendChild(tdMin);
 
@@ -1020,17 +1029,55 @@ function renderRow(row) {
   tr.appendChild(tdCom);
 
   const tdAct = document.createElement("td");
-  tdAct.style.textAlign = "center";
+  const wrap = document.createElement("div");
+  wrap.className = "row-actions";
+
+  const idx = state.rows.findIndex(r => r.id === row.id);
+  const up = document.createElement("button");
+  up.type = "button";
+  up.className = "small arrow-btn";
+  up.textContent = "↑"; // arrow up
+  up.title = "Subir";
+  up.setAttribute("aria-label", "Subir paso");
+  up.disabled = (idx <= 0);
+  up.addEventListener("click", () => moveRow(row.id, -1));
+  wrap.appendChild(up);
+
+  const down = document.createElement("button");
+  down.type = "button";
+  down.className = "small arrow-btn";
+  down.textContent = "↓"; // arrow down
+  down.title = "Bajar";
+  down.setAttribute("aria-label", "Bajar paso");
+  down.disabled = (idx >= state.rows.length - 1);
+  down.addEventListener("click", () => moveRow(row.id, 1));
+  wrap.appendChild(down);
+
   const del = document.createElement("button");
   del.type = "button";
   del.className = "danger small";
   del.textContent = "Quitar";
-  del.title = "Elimina este paso del registro";
+  del.title = "Eliminar este paso del registro";
   del.addEventListener("click", () => deleteRow(row.id));
-  tdAct.appendChild(del);
+  wrap.appendChild(del);
+
+  tdAct.appendChild(wrap);
   tr.appendChild(tdAct);
 
   return tr;
+}
+
+// Mueve una fila arriba o abajo (direction = -1 o +1)
+function moveRow(rowId, direction) {
+  const idx = state.rows.findIndex(r => r.id === rowId);
+  if (idx === -1) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= state.rows.length) return;
+  const tmp = state.rows[idx];
+  state.rows[idx] = state.rows[newIdx];
+  state.rows[newIdx] = tmp;
+  renderTimesTable();
+  resetFinalizedState();
 }
 
 function deleteRow(rowId) {
@@ -1054,37 +1101,92 @@ function makeTimeCell(row, which) {
   td.className = "time-cell";
   const wrap = document.createElement("div");
   wrap.className = "fix-line";
+
+  const key       = which === "start" ? "startISO"    : "endISO";
+  const fixedKey  = which === "start" ? "startFixed"  : "endFixed";
+  const editedKey = which === "start" ? "startEdited" : "endEdited";
+
   const inp = document.createElement("input");
   inp.type = "text";
   inp.disabled = true;
-  const key = which === "start" ? "startISO" : "endISO";
-  const fixedKey = which === "start" ? "startFixed" : "endFixed";
   inp.value = row[key];
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.title = "Fijar";
-  cb.checked = row[fixedKey];
-  cb.disabled = row[fixedKey];
-  cb.addEventListener("change", () => {
-    if (cb.checked) {
+  inp.placeholder = "YYYY-MM-DD HH:MM:SS";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "small";
+
+  // Estado local: false = normal (no editando), true = editando
+  let editing = false;
+
+  const refreshUI = () => {
+    if (!row[fixedKey]) {
+      btn.textContent = "Fijar hora";
+      btn.className = "small";
+      inp.disabled = true;
+      inp.classList.remove("editing");
+    } else if (editing) {
+      btn.textContent = "Guardar";
+      btn.className = "small";
+      inp.disabled = false;
+      inp.classList.add("editing");
+    } else {
+      btn.textContent = row[editedKey] ? "Editar*" : "Editar";
+      btn.className = "small ghost";
+      inp.disabled = true;
+      inp.classList.remove("editing");
+    }
+  };
+  refreshUI();
+
+  btn.addEventListener("click", () => {
+    if (!row[fixedKey]) {
+      // Primer clic: fija la hora ACTUAL
       row[key] = nowLocal();
       row[fixedKey] = true;
       inp.value = row[key];
-      cb.disabled = true;
+      refreshUI();
       refreshRowMinutes(row);
+      resetFinalizedState();
+    } else if (editing) {
+      // Guardar la edicion manual
+      const val = (inp.value || "").trim();
+      if (!parseLocal(val)) {
+        alert("Formato invalido. Use YYYY-MM-DD HH:MM:SS (ej: 2026-09-02 14:35:20).");
+        inp.focus();
+        return;
+      }
+      row[key] = val;
+      row[editedKey] = true;
+      editing = false;
+      refreshUI();
+      refreshRowMinutes(row);
+      resetFinalizedState();
+    } else {
+      // Entrar en modo edicion
+      editing = true;
+      refreshUI();
+      inp.focus();
+      inp.select();
     }
   });
-  const lbl = document.createElement("label");
-  lbl.style.fontSize = "11px";
-  lbl.style.color = "var(--muted)";
-  lbl.style.whiteSpace = "nowrap";
-  lbl.appendChild(cb);
-  const span = document.createElement("span"); span.textContent = " Fijar";
-  lbl.appendChild(span);
+
+  // Enter en el input dispara Guardar
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && editing) { e.preventDefault(); btn.click(); }
+    if (e.key === "Escape" && editing) {
+      e.preventDefault();
+      editing = false;
+      inp.value = row[key];
+      refreshUI();
+    }
+  });
+
   wrap.appendChild(inp);
-  wrap.appendChild(lbl);
+  wrap.appendChild(btn);
   td.appendChild(wrap);
 
+  // Mientras no este fijado, refresca cada segundo la hora "en vivo"
   if (!row[fixedKey]) {
     const timer = setInterval(() => {
       if (row[fixedKey]) { clearInterval(timer); return; }
@@ -1109,7 +1211,9 @@ function refreshRowMinutes(row) {
   const tr = document.querySelector('tr[data-id="' + row.id + '"]');
   if (!tr) return;
   const minCell = tr.children[3];
-  if (minCell) minCell.textContent = computeMinutes(row);
+  if (!minCell) return;
+  minCell.textContent = computeMinutes(row);
+  minCell.classList.toggle("edited", !!(row.startEdited || row.endEdited));
 }
 
 // =====================================================
@@ -1288,11 +1392,22 @@ function buildReport(summary) {
   L.push("  Duracion total (min)        : " + summary.durationMin.toFixed(2));
   L.push("");
   L.push("[Tiempos por paso]");
+  L.push("  Nota: un asterisco (*) despues de una hora indica que fue editada manualmente por el analista.");
   const header = ["#", "Descripcion", "Hora inicial", "Hora final", "Min", "Comentarios"];
   const rows = state.rows.map((r, i) => [
-    String(i+1), r.step, r.startISO, r.endISO, computeMinutes(r), (r.comment || "").replace(/\s+/g, " ").trim()
+    String(i+1),
+    r.step,
+    r.startISO + (r.startEdited ? " *" : ""),
+    r.endISO   + (r.endEdited   ? " *" : ""),
+    computeMinutes(r) + ((r.startEdited || r.endEdited) ? " *" : ""),
+    (r.comment || "").replace(/\s+/g, " ").trim()
   ]);
   L.push(formatTable(header, rows));
+  const anyEdited = state.rows.some(r => r.startEdited || r.endEdited);
+  if (anyEdited) {
+    L.push("");
+    L.push("  ADVERTENCIA: al menos una hora fue editada manualmente. Verifique los tiempos marcados con (*).");
+  }
   const total = state.rows.reduce((acc, r) => {
     const m = parseFloat(computeMinutes(r));
     return acc + (isNaN(m) ? 0 : m);
